@@ -1,0 +1,103 @@
+{
+  "name": "yaamp",
+  "version": "0.0.1",
+  "description": "Winamp + Yandex Music",
+  "main": "main.js",
+  "scripts": {
+    "copy": "xcopy bundled dist /e",
+    "build": "yarn run copy && yarn build:src",
+    "build:src": "npx parcel build --public-url ./ ./src/index.html",
+    "watch": "npx parcel watch --public-url ./ --hmr-hostname 127.0.0.1 --hmr-port 54439 ./src/index.html",
+    "test": "jest",
+    "electron": "./node_modules/.bin/electron .",
+    "start": "yarn run build && electron .",
+    "pack:win": "build -w --x64",
+    "pack:linux": "build -l --x64",
+    "pack:mac": "build -m --x64",
+    "pack": "yarn run pack:win && yarn run pack:linux && yarn run pack:mac",
+    "dist": "yarn run build && build --x64"
+  },
+  "homepage": "https://yaamp.ru",
+  "repository": "https://github.com/umnik1/yaamp",
+  "author": "Maksim Chingin",
+  "license": "MIT",
+  "dependencies": {
+    "electron-is-dev": "^1.0.1",
+    "electron-log": "^3.0.1",
+    "electron-updater": "^4.0.6",
+    "form-data": "^4.0.0",
+    "html-to-text": "^4.0.0",
+    "left-clicky": "0.1.1",
+    "mime-types": "^2.1.22",
+    "parcel": "^2.9.3",
+    "yandex-music-client": "^0.4.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.11",
+    "@types/node": "^10.14.1",
+    "@types/webdriverio": "^4.13.3",
+    "electron": "^13.0.0",
+    "electron-builder": "^20.39.0",
+    "electron-debug": "^2.1.0",
+    "eslint": "^5.15.2",
+    "jest": "^24.5.0",
+    "parcel-bundler": "^1.12.2",
+    "spectron": "^5.0.0",
+    "ts-jest": "^24.0.0",
+    "tslint": "^5.14.0",
+    "typescript": "^3.2.4",
+    "webamp": "^1.5.0"
+  },
+  "browserslist": [
+    "Chrome 69"
+  ],
+  "build": {
+    "appId": "me.umnikone.yaamp",
+    "productName": "Yaamp",
+    "copyright": "Copyright © 2023 Maksim Chingin",
+    "files": [
+      "!.*${/*}",
+      "!src/*.*",
+      "!artifacts${/*}",
+      "!docs${/*}",
+      "!bundled${/*}"
+    ],
+    "directories": {
+      "buildResources": "res",
+      "output": "artifacts"
+    },
+    "mac": {
+      "category": "public.app-category.music",
+      "target": "default"
+    },
+    "win": {
+      "target": "nsis-web"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "umnik1",
+      "releaseType": "draft"
+    }
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*(\\.|/)spec)\\.tsx?$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  }
+}
