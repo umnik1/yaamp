@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Winamp + Yandex Music",
   "main": "main.js",
+  "targets": {
+    "main": false
+  },
   "scripts": {
     "copy": "xcopy bundled dist /e",
     "build": "yarn run copy && yarn build:src",
@@ -22,6 +25,8 @@
   "author": "Maksim Chingin",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.5.1",
+    "discord-rpc": "^4.0.1",
     "electron-is-dev": "^1.0.1",
     "electron-log": "^3.0.1",
     "electron-updater": "^4.0.6",

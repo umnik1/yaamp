@@ -2,6 +2,8 @@ const isDev = require('electron-is-dev')
 const path = require('path')
 const url = require('url')
 const { ipcMain, webContents } = require('electron')
+const crypto = require("crypto");
+const DiscordRPC =  require('discord-rpc');
 
 const checkForUpdatesAndNotify = require('./src/node/updates.js')
 const interceptStreamProtocol = require('./src/node/protocol.js')
@@ -16,6 +18,16 @@ const { getTrackUrl } = require('yandex-music-client/trackUrl')
 if (isDev) {
   require('electron-debug')({ showDevTools: 'undocked' })
 }
+
+const sessionId = crypto.randomBytes(20).toString('hex');
+const clientId = '1161295534770892860';
+
+DiscordRPC.register(clientId);
+
+const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+
+rpc.login({ clientId }).catch(console.error);
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -35,7 +47,7 @@ function createWindow() {
   const {
     width,
     height
-  } = electron.screen.getPrimaryDisplay().workAreaSize
+  } = electron.screen.getPrimaryDisplay().size
 
   app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
 
@@ -43,10 +55,10 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     x: 0,
     y: 0,
-    width: 10000,
-    height: 10000,
+    width: width + 10000,
+    height: height + 10000,
     transparent: true,
-    useContentSize: true,
+    useContentSize: false,
     frame: false,
     hasShadow: false,
     show: false,
@@ -70,6 +82,8 @@ function createWindow() {
     slashes: true
   }))
 
+  mainWindow.maximize();
+
   // and show window once it's ready (to prevent flashing)
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
@@ -80,14 +94,6 @@ function createWindow() {
     // Dereference the window object
     mainWindow = null
   })
-
-  mainWindow.on("move", () => {
-    const bounds = mainWindow.getBounds();
-    const currentDisplay = screen.getDisplayNearestPoint({x: bounds.x, y: bounds.y});
-
-    // Perform your actions here..
-    console.log(currentDisplay);
-});
 
 }
 
@@ -147,7 +153,7 @@ let accountData = {};
 const client = new YandexMusicClient({
   BASE: "https://api.music.yandex.net:443",
   HEADERS: {
-      'Authorization': `OAuth TOKEN`,
+      'Authorization': `OAuth AQAAAAAFvG9VAAG8XvXFDhfOIUq1shc35xt3xWs`,
       // specify 'en' to receive data in English
       'Accept-Language': 'ru'
     },
@@ -162,6 +168,8 @@ client.account.getAccountStatus().then(async ({result}) => {
   accountData.displayName = result.account.displayName;
 });
 
+
+// Получаем любимые треки
 ipcMain.handle('getLikedTracks', async (event) => {
   let likeTrackIDs = [];
 
@@ -172,10 +180,6 @@ ipcMain.handle('getLikedTracks', async (event) => {
       return data;
   })
 
-  likeTrackIDs = likeTrackIDs.slice(1, 3);
-
-  console.log(likeTrackIDs);
-
   const tracks = await client.tracks.getTracks({"track-ids": likeTrackIDs}).then((data) => {
     return data;
   })
@@ -183,21 +187,57 @@ ipcMain.handle('getLikedTracks', async (event) => {
   return tracks;
 })
 
+// Получаем URL трека по ID
 ipcMain.handle('getTrackByID', async (event, trackid) => {
 
   const data = await getTrackUrl(client, trackid).then((data) => {
       return data;
   })
 
+  await client.tracks.playAudio({"track-id": trackid, "from": 'web-main-rup-radio-main', "timestamp": new Date().toISOString(), 'uid': accountData.uid, 'play-id': sessionId}).then((data) => {
+    return data;
+  })
+
+   // Discord Integration
+   await client.tracks.getTracks({"track-ids": [trackid]}).then((data) => {
+    const element = data.result[0];
+    const startTimestamp = new Date();
+
+    let artist = [];
+
+    element.artists.forEach((a) => {
+      artist.push(a.name);
+    });
+
+    const presObj = {
+			details: `${artist.join(', ')} - ${element.title}`,
+      state: `from Yaamp`,
+      largeImageKey: 'https://' + element.coverUri.replace("%%", "200x200"),
+      largeImageText: `${artist.join(', ')} - ${element.title}`,
+      smallImageKey: 'https://' + element.coverUri.replace("%%", "200x200"),
+      smallImageText: 'mcat-discord-rpc',
+      buttons: [
+        {
+          label: 'Listen this track',
+          url: `https://music.yandex.ru/track/${element.id}`,
+        },
+      ],
+    };
+  
+    rpc.setActivity(presObj);
+
+    return data;
+  })
+
   return data;
 
 })
 
+// Получаем список плейлистов пользователя
 ipcMain.handle('getUserPlaylists', async (event) => {
   let userPlaylists = [];
 
   await client.playlists.getPlayLists(client, accountData.uid).then((data) => {
-    console.log(data.result);
     data.result.forEach((element) => {
       userPlaylists.push({ title: element.title, uid: element.uid, kind: element.kind });
     });
@@ -208,15 +248,180 @@ ipcMain.handle('getUserPlaylists', async (event) => {
   return userPlaylists;
 })
 
+// Задаём плейлист
 ipcMain.handle('setPlaylist', async (event, data) => {
   let tracks = [];
+  let tracksList = [];
 
   await client.playlists.getPlaylistById(data.uid, data.kind).then((data) => {
     tracks = data.result.tracks;
-    mainWindow.webContents.send('setTracks', tracks);
+    
+    tracks.forEach((element) => {
+      tracksList.push(element.track);
+    });
+    mainWindow.webContents.send('setTracks', tracksList);
+
+    return tracksList;
+  });
+
+  return true;
+})
+
+// Получаем список исполнителей пользователя
+ipcMain.handle('getUserArtists', async (event) => {
+  let userArtists = [];
+
+  await client.artists.getArtists(client, accountData.uid).then((data) => {
+    data.result.forEach((element) => {
+      userArtists.push({ title: element.name, id: element.id });
+    });
+
+    return userArtists;
+  });
+
+  return userArtists;
+})
+
+// Задаём испольнителя
+ipcMain.handle('setArtist', async (event, data) => {
+  let tracks = [];
+
+  await client.artists.getPopularTracks(data.id).then(async (data) => {
+    tracks = data.result.tracks;
+    tracks = await client.tracks.getTracks({"track-ids": tracks}).then((data) => {
+      mainWindow.webContents.send('setTracks', data.result);
+      
+      return data;
+    })
 
     return tracks;
   });
 
   return true;
+})
+
+// Получаем список альбомов пользователя
+ipcMain.handle('getUserAlbums', async (event) => {
+  let userAlbumsIds = [];
+  let userAlbums = [];
+
+  await client.albums.getAlbums(client, accountData.uid).then((data) => {
+    data.result.forEach((element) => {
+      userAlbumsIds.push(element.id);
+    });
+  });
+
+  await client.albums.getAlbumsByIds({"album-ids": userAlbumsIds}).then((data) => {
+    data.result.forEach((element) => {
+      if (element.type !== 'podcast') {
+        userAlbums.push({ title: element.artists[0].name + ' - ' +element.title, id: element.id });
+      }
+    });
+  });
+
+  return userAlbums;
+})
+
+// Задаём альбом
+ipcMain.handle('setAlbum', async (event, data) => {
+  let tracks = [];
+
+  await client.albums.getAlbumsWithTracks(data.id).then(async (data) => {
+    data.result.volumes[0].forEach((element) => {
+      tracks.push(element.id);
+    });
+    tracks = await client.tracks.getTracks({"track-ids": tracks}).then((data) => {
+      mainWindow.webContents.send('setTracks', data.result);
+      
+      return data;
+    })
+
+    return tracks;
+  });
+
+  return true;
+})
+
+// Получаем список станций
+ipcMain.handle('getRotor', async (event) => {
+  let stations = [];
+  let userAlbums = [];
+
+  await client.rotor.getStationsList('ru').then((data) => {
+    data.result.forEach((element) => {
+      stations.push({ title: element.station.name, id: element.station.id.type + ':' + element.station.id.tag });
+    });
+  });
+
+  return stations;
+})
+
+// Задаём станцию
+ipcMain.handle('setRotor', async (event, data) => {
+  let rotorTracks = [];
+  let lastTrackID = null;
+
+  await client.rotor.sendStationFeedback(data.id, {type: 'radioStarted', "from": 'web-main-rup-radio-main', "timestamp": new Date().toISOString()}, null).then((data) => {
+    // console.log(data);
+  })
+
+  for (let i = 0; i < 15; i++) {
+    if (i !== 0) {
+      lastTrackID = rotorTracks[rotorTracks.length - 1].id;
+    }
+
+    await client.rotor.getStationTracks(data.id, true, lastTrackID).then((data) => {
+      data.result.sequence.forEach((element) => {
+        rotorTracks.push(element.track);
+      });
+    });
+  }
+
+  mainWindow.webContents.send('setTracks', rotorTracks);
+
+  return true;
+})
+
+// Моя волна
+ipcMain.handle('setMywave', async (event) => {
+  let myWave = [];
+
+  let lastTrackID = null;
+
+  await client.rotor.sendStationFeedback('user:onyourwave', {type: 'radioStarted', "from": 'web-main-rup-radio-main', "timestamp": new Date().toISOString()}, null).then((data) => {
+    // console.log(data);
+  })
+
+  for (let i = 0; i < 15; i++) {
+    if (i !== 0) {
+      lastTrackID = myWave[myWave.length - 1].id;
+    }
+
+    await client.rotor.getStationTracks('user:onyourwave', true, lastTrackID).then((data) => {
+      data.result.sequence.forEach((element) => {
+        myWave.push(element.track);
+      });
+    });
+  }
+
+  mainWindow.webContents.send('setTracks', myWave);
+
+  return true;
+})
+
+
+// Любимые треки
+ipcMain.handle('setMyloved', async (event) => {
+  let likeTrackIDs = [];
+
+  const data = await client.tracks.getLikedTracksIds(client, accountData.uid).then((data) => {
+      data.result.library.tracks.forEach((element) => {
+        likeTrackIDs.push(element.id);
+      });
+      return data;
+  })
+
+  const tracks = await client.tracks.getTracks({"track-ids": likeTrackIDs}).then((data) => {
+    mainWindow.webContents.send('setTracks', data.result);
+  })
 })

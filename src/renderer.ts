@@ -87,11 +87,9 @@ ipcRenderer.invoke('getLikedTracks').then((rs: any) => {
       artist.push(a.name);
     });
 
-    ipcRenderer.invoke('getTrackByID', element.id).then((link: any) => {
-       webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: link+'.mp3', duration: Math.floor(element.durationMs / 1000) }]);
-      //  trackList.push({ metaData: {artist: artist.join(', '), title: element.title}, url: link, duration: Math.floor(element.durationMs / 1000) });
-    });
-
+    if (element.durationMs) {
+      webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+    }
   });
 
   webamp.appendTracks(trackList);
@@ -104,13 +102,17 @@ ipcRenderer.on("setTracks", (event:any, data: any) => {
   data.forEach((element: any) => {
     let artist: any[] = [];
 
-    element.track.artists.forEach((a: any) => {
+    element.artists.forEach((a: any) => {
       artist.push(a.name);
     });
 
-    ipcRenderer.invoke('getTrackByID', element.track.id).then((link: any) => {
-       webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.track.title}, url: link+'.mp3', duration: Math.floor(element.track.durationMs / 1000) }]);
-    });
+    if (element.durationMs) {
+      webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+    }
 
   });
 });
+
+// ipcRenderer.invoke('test').then((rs: any) => {
+//   console.log(rs);
+// });
