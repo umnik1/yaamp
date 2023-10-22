@@ -7,7 +7,8 @@
     "main": false
   },
   "scripts": {
-    "copy": "xcopy bundled dist /e",
+    "copy": "xcopy bundled dist /e /Y && xcopy res dist /e /Y",
+    "clean": "rmdir /s /q node_modules && del /f yarn.lock && yarn cache clean && yarn install",
     "build": "yarn run copy && yarn build:src",
     "build:src": "npx parcel build --public-url ./ ./src/index.html",
     "watch": "npx parcel watch --public-url ./ --hmr-hostname 127.0.0.1 --hmr-port 54439 ./src/index.html",
@@ -26,15 +27,18 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^1.5.1",
+    "bufferutil": "^4.0.8",
     "discord-rpc": "^4.0.1",
     "electron-is-dev": "^1.0.1",
     "electron-log": "^3.0.1",
     "electron-updater": "^4.0.6",
+    "encoding": "^0.1.13",
     "form-data": "^4.0.0",
     "html-to-text": "^4.0.0",
     "left-clicky": "0.1.1",
     "mime-types": "^2.1.22",
     "parcel": "^2.9.3",
+    "utf-8-validate": "^6.0.3",
     "yandex-music-client": "^0.4.3"
   },
   "devDependencies": {
@@ -43,7 +47,7 @@
     "@types/webdriverio": "^4.13.3",
     "electron": "^13.0.0",
     "electron-builder": "^20.39.0",
-    "electron-debug": "^2.1.0",
+    "electron-debug": "^3.2.0",
     "eslint": "^5.15.2",
     "jest": "^24.5.0",
     "parcel-bundler": "^1.12.2",

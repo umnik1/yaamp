@@ -36,8 +36,8 @@ function handleTransparency() {
                 e.toElement.addEventListener('mouseleave', mouseleaveHandler)
                 e.toElement.addEventListener('click', () => {
                     // Removing context menu means we have to trigger leave too
-                    mainWindow.setIgnoreMouseEvents(true, { forward: true })
-                    ignored = true
+                    // mainWindow.setIgnoreMouseEvents(true, { forward: true })
+                    // ignored = true
                 })
             }
         }

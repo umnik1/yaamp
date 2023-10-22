@@ -112,7 +112,3 @@ ipcRenderer.on("setTracks", (event:any, data: any) => {
 
   });
 });
-
-// ipcRenderer.invoke('test').then((rs: any) => {
-//   console.log(rs);
-// });
