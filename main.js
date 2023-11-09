@@ -22,12 +22,14 @@ if (isDev) {
   require('electron-debug')({ showDevTools: 'undocked' })
 }
 
-const tokenPath = './token.txt';
+const tokenPath = app.getPath("userData") + '/token.json';
+const skinPath = app.getPath("userData") + '/skin.json';
 const URL_WITH_ACCESS_TOKEN_REGEX = 'https:\\/\\/music\\.yandex\\.(?:ru|com|by|kz|ua)\\/#access_token=([^&]*)';
 
 let nowPlaying = 0;
 
 let yaAuthToken = '';
+let skinData = '';
 const sessionId = crypto.randomBytes(20).toString('hex');
 const clientId = '1161295534770892860';
 
@@ -58,6 +60,7 @@ function createWindow() {
   } = electron.screen.getPrimaryDisplay().size
 
   app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
+  // For Linux: Remove "resizable"
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -150,6 +153,15 @@ const getTokenFromFile = async()=>{
   } catch (error) {
     fs.writeFile(tokenPath, '', (error) => {});  }
 }
+
+const getSkinFromFile = async()=>{
+  try {
+    const result = await readFile(skinPath,'binary')
+    skinData = result;
+  } catch (error) {
+    fs.writeFile(skinPath, '', (error) => {});  }
+}
+
 
 
 // This method will be called when Electron has finished
@@ -291,36 +303,38 @@ getTokenFromFile().then( () => {
       return data;
     })
 
-    // Discord Integration
-    await client.tracks.getTracks({"track-ids": [trackid]}).then((data) => {
-      const element = data.result[0];
-      const startTimestamp = new Date();
+    if (process.platform !== 'linux') {
+      // Discord Integration
+      await client.tracks.getTracks({"track-ids": [trackid]}).then((data) => {
+        const element = data.result[0];
+        const startTimestamp = new Date();
 
-      let artist = [];
+        let artist = [];
 
-      element.artists.forEach((a) => {
-        artist.push(a.name);
-      });
+        element.artists.forEach((a) => {
+          artist.push(a.name);
+        });
 
-      const presObj = {
-        details: `${element.title}`,
-        state: `${artist.join(', ')}`,
-        largeImageKey: 'https://' + element.coverUri.replace("%%", "200x200"),
-        largeImageText: `${artist.join(', ')} - ${element.title}`,
-        smallImageKey: 'https://yaamp.ru/icon.png',
-        smallImageText: 'Yaamp.ru',
-        buttons: [
-          {
-            label: 'Listen this track',
-            url: `https://music.yandex.ru/track/${element.id}`,
-          },
-        ],
-      };
-    
-      rpc.setActivity(presObj);
+        const presObj = {
+          details: `${element.title}`,
+          state: `${artist.join(', ')}`,
+          largeImageKey: 'https://' + element.coverUri.replace("%%", "200x200"),
+          largeImageText: `${artist.join(', ')} - ${element.title}`,
+          smallImageKey: 'https://yaamp.ru/icon.png',
+          smallImageText: 'Yaamp.ru',
+          buttons: [
+            {
+              label: 'Listen this track',
+              url: `https://music.yandex.ru/track/${element.id}`,
+            },
+          ],
+        };
+      
+        rpc.setActivity(presObj);
 
-      return data;
-    })
+        return data;
+      })
+    }
 
     return data;
 
@@ -572,6 +586,22 @@ getTokenFromFile().then( () => {
     require('electron').shell.openExternal(`https://music.yandex.ru/track/${nowPlaying}`)
 
     return true;
+  })
+
+  // Сохранения скина
+  ipcMain.handle('setSkin', async (event, data) => {
+    fs.writeFile(skinPath, data.link, (error) => {});
+
+    return true;
+  })
+
+  // Получение скина
+  ipcMain.handle('getSkin', async (event, data) => {
+    skinData = await getSkinFromFile().then( () => {
+      return skinData;
+    });
+
+    return skinData;
   })
 
 })

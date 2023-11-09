@@ -15,15 +15,15 @@
     "test": "jest",
     "electron": "./node_modules/.bin/electron .",
     "start": "yarn run build && electron .",
-    "pack:win": "build -w --x64",
-    "pack:linux": "build -l --x64",
-    "pack:mac": "build -m --x64",
+    "pack:win": "electron-builder build -w --x64 --publish always",
+    "pack:linux": "electron-builder build -l --x64",
+    "pack:mac": "electron-builder build -m --x64",
     "pack": "yarn run pack:win && yarn run pack:linux && yarn run pack:mac",
     "dist": "yarn run build && build --x64"
   },
   "homepage": "https://yaamp.ru",
   "repository": "https://github.com/umnik1/yaamp",
-  "author": "Maksim Chingin",
+  "author": "Maksim Chingin <colorless-unknown@yandex.ru>",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.5.1",
@@ -46,12 +46,12 @@
     "@types/node": "^10.14.1",
     "@types/webdriverio": "^4.13.3",
     "electron": "^13.0.0",
-    "electron-builder": "^20.39.0",
+    "electron-builder": "^24.0",
     "electron-debug": "^3.2.0",
     "eslint": "^5.15.2",
     "jest": "^24.5.0",
     "parcel-bundler": "^1.12.2",
-    "spectron": "^5.0.0",
+    "spectron": "^13.0.0",
     "ts-jest": "^24.0.0",
     "tslint": "^5.14.0",
     "typescript": "^3.2.4",
@@ -77,7 +77,7 @@
     },
     "mac": {
       "category": "public.app-category.music",
-      "target": "default"
+      "target": "pkg"
     },
     "win": {
       "target": "nsis-web"
@@ -92,7 +92,7 @@
     "publish": {
       "provider": "github",
       "owner": "umnik1",
-      "releaseType": "draft"
+      "token": "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"
     }
   },
   "jest": {

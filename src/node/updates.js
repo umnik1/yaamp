@@ -19,11 +19,11 @@ function checkForUpdatesAndNotify() {
     log.info('Got info about update available', info)
     electron.dialog.showMessageBox({
       type: 'none',
-      buttons: ['Open', 'Cancel'],
-      title: 'New version available',
+      buttons: ['Открыть', 'Отмена'],
+      title: 'Доступна новая версия',
       message: [
-        `There is a new version ${info.version}.`,
-        ` Would you like to open the download page?`,
+        `Доступна новая версия: ${info.version}.`,
+        ` Хотите её скачать?`,
       ].join(''),
       detail: htmlToText.fromString(
         info.releaseNotes.reduce((acc, n) => acc + n.version + '<hr>' + n.note, ''),
@@ -32,7 +32,7 @@ function checkForUpdatesAndNotify() {
       noLink: true,
     }, (choice) => {
       if (choice === 0) {
-        electron.shell.openExternal('https://desktop.webamp.org')
+        electron.shell.openExternal('https://yaamp.ru')
       }
     })
   })

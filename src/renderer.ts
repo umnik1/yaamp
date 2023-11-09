@@ -9,9 +9,9 @@ let trackList: { metaData: { artist: string; title: any; }; url: string; duratio
 
 const webamp = new Webamp({
   initialTracks: trackList,
-  initialSkin: {
-    url: './skins/base-2.91.wsz'
-  },
+  // initialSkin: {
+  //   url: './skins/base-2.91.wsz'
+  // },
   availableSkins: [
     { url: './skins/base-2.91.wsz', name: 'Base v2.91' },
     { url: './skins/Green-Dimension-V2.wsz', name: 'Green Dimension V2' },
@@ -78,6 +78,11 @@ window.webampPrevious = function () {
   webamp.previousTrack()
 }
 
+ipcRenderer.invoke('getSkin').then((rs: any) => {
+  if (rs) {
+    webamp.setSkinFromClient(rs);
+  }
+})
 
 ipcRenderer.invoke('getLikedTracks').then((rs: any) => {
   rs.result.forEach((element: any) => {

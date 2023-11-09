@@ -11,7 +11,7 @@ function handleTransparency() {
     // Windows
     // Ignoring mouse events around the UI (windows and context menu).
     // Works by using mousein and mouseout and forwarding when ignoring.
-    if (process.platform === 'win32') {
+    if (process.platform === 'win32' || process.platform !== 'darwin') {
         mainWindow.setIgnoreMouseEvents(true, { forward: true })
         let ignored = true
 
@@ -157,6 +157,7 @@ function handleTransparency() {
         const enableTransparencyChecking = () => {
             clearInterval(interval)
             interval = setInterval(() => {
+
                 const cursorPoint = remote.screen.getCursorScreenPoint()
                 const windowBounds = mainWindow.getBounds()
     
@@ -187,7 +188,6 @@ function handleTransparency() {
                     const withinY = (positionInWindow.y > elementPosition.minY)
                         && (positionInWindow.y < elementPosition.maxY)
                     const within = withinX && withinY
-    
                     if (within) {
                         if (ignored) {
                             mainWindow.setIgnoreMouseEvents(false)
@@ -220,6 +220,10 @@ function handleTransparency() {
 
         setupWatchingElements()
         enableTransparencyChecking()
+        setInterval(() => {
+            setupWatchingElements()
+        }, 100)
+
     }
 }
 

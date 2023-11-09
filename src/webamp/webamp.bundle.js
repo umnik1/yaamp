@@ -14410,6 +14410,10 @@ function selectAll() {
 
 
 
+const {
+  ipcRenderer
+} = window.require('electron');
+
 // Lower is better
 const DURATION_VISIBLE_PRIORITY = 5;
 const META_DATA_VISIBLE_PRIORITY = 10;
@@ -14468,6 +14472,54 @@ function setSkinFromBlob(blob) {
     }
     try {
       const skinData = await js_skinParser(blob, JSZip);
+      ipcRenderer.invoke("setSkin", {
+        link: JSON.stringify(skinData)
+      }).then(() => {});
+      dispatch({
+        type: SET_SKIN_DATA,
+        data: {
+          skinImages: skinData.images,
+          skinColors: skinData.colors,
+          skinPlaylistStyle: skinData.playlistStyle,
+          skinCursors: skinData.cursors,
+          skinRegion: skinData.region,
+          skinGenLetterWidths: skinData.genLetterWidths,
+          skinGenExColors: skinData.genExColors
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      dispatch({
+        type: LOADED
+      });
+      alert(`Failed to parse skin`);
+    }
+  };
+}
+function setSkinFromClient(data) {
+  return async (dispatch, getState, {
+    requireJSZip
+  }) => {
+    if (!requireJSZip) {
+      alert("Yaamp has not been configured to support custom skins.");
+      return;
+    }
+    dispatch({
+      type: LOADING
+    });
+    let JSZip;
+    try {
+      JSZip = await requireJSZip();
+    } catch (e) {
+      console.error(e);
+      dispatch({
+        type: LOADED
+      });
+      alert("Failed to load the skin parser.");
+      return;
+    }
+    try {
+      const skinData = JSON.parse(data);
       dispatch({
         type: SET_SKIN_DATA,
         data: {
@@ -16711,7 +16763,7 @@ const OptionsContextMenu = () => {
 
 
 const {
-  ipcRenderer
+  ipcRenderer: MainContextMenu_ipcRenderer
 } = window.require('electron');
 
 
@@ -16740,7 +16792,7 @@ const MainContextMenu = Object(react["memo"])(({
   const [searchResult, setsearchResult] = Object(react["useState"])([]);
   const [lendings, setLendings] = Object(react["useState"])([]);
   const handleChange = event => {
-    ipcRenderer.invoke("search", {
+    MainContextMenu_ipcRenderer.invoke("search", {
       searchText: event.target.value
     }).then(rs => {
       setsearchResult(rs);
@@ -16749,19 +16801,19 @@ const MainContextMenu = Object(react["memo"])(({
   Object(react["useEffect"])(() => {
     if (!playlistgetted) {
       setPlaylistgetted(true);
-      ipcRenderer.invoke('getUserPlaylists').then(rs => {
+      MainContextMenu_ipcRenderer.invoke('getUserPlaylists').then(rs => {
         setPlaylists(rs);
       });
-      ipcRenderer.invoke('getUserArtists').then(rs => {
+      MainContextMenu_ipcRenderer.invoke('getUserArtists').then(rs => {
         setArtists(rs);
       });
-      ipcRenderer.invoke('getUserAlbums').then(rs => {
+      MainContextMenu_ipcRenderer.invoke('getUserAlbums').then(rs => {
         setAlbums(rs);
       });
-      ipcRenderer.invoke('getRotor').then(rs => {
+      MainContextMenu_ipcRenderer.invoke('getRotor').then(rs => {
         setRotors(rs);
       });
-      ipcRenderer.invoke('lendings').then(rs => {
+      MainContextMenu_ipcRenderer.invoke('lendings').then(rs => {
         setLendings(rs);
       });
     }
@@ -16770,25 +16822,25 @@ const MainContextMenu = Object(react["memo"])(({
   return /*#__PURE__*/Object(jsx_runtime["jsxs"])(react["Fragment"], {
     children: [/*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
       onClick: async () => {
-        ipcRenderer.invoke("openLink", {
+        MainContextMenu_ipcRenderer.invoke("openLink", {
           link: "https://yaamp.ru/"
         }).then(() => {});
       },
       label: "Yaamp..."
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
       onClick: async () => {
-        ipcRenderer.invoke("setMywave").then(() => {});
+        MainContextMenu_ipcRenderer.invoke("setMywave").then(() => {});
       },
       label: "\u041C\u043E\u044F \u0432\u043E\u043B\u043D\u0430"
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
       onClick: async () => {
-        ipcRenderer.invoke("setMyloved").then(() => {});
+        MainContextMenu_ipcRenderer.invoke("setMyloved").then(() => {});
       },
       label: "\u041B\u044E\u0431\u0438\u043C\u044B\u0435 \u0442\u0440\u0435\u043A\u0438"
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), lendings.map(result => {
       return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
         onClick: async () => {
-          ipcRenderer.invoke("setPlaylist", {
+          MainContextMenu_ipcRenderer.invoke("setPlaylist", {
             uid: result.data.data.uid,
             kind: result.data.data.kind
           }).then(() => {});
@@ -16811,12 +16863,12 @@ const MainContextMenu = Object(react["memo"])(({
         return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
           onClick: async () => {
             if (result.type == 'artist') {
-              ipcRenderer.invoke("setArtist", {
+              MainContextMenu_ipcRenderer.invoke("setArtist", {
                 id: result.id
               }).then(() => {});
             }
             if (result.type == 'album') {
-              ipcRenderer.invoke("setAlbum", {
+              MainContextMenu_ipcRenderer.invoke("setAlbum", {
                 id: result.id
               }).then(() => {});
             }
@@ -16829,7 +16881,7 @@ const MainContextMenu = Object(react["memo"])(({
       children: playlists.map(playlist => {
         return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
           onClick: async () => {
-            ipcRenderer.invoke("setPlaylist", {
+            MainContextMenu_ipcRenderer.invoke("setPlaylist", {
               uid: playlist.uid,
               kind: playlist.kind
             }).then(() => {});
@@ -16842,7 +16894,7 @@ const MainContextMenu = Object(react["memo"])(({
       children: artists.map(artist => {
         return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
           onClick: async () => {
-            ipcRenderer.invoke("setArtist", {
+            MainContextMenu_ipcRenderer.invoke("setArtist", {
               id: artist.id
             }).then(() => {});
           },
@@ -16854,7 +16906,7 @@ const MainContextMenu = Object(react["memo"])(({
       children: albums.map(album => {
         return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
           onClick: async () => {
-            ipcRenderer.invoke("setAlbum", {
+            MainContextMenu_ipcRenderer.invoke("setAlbum", {
               id: album.id
             }).then(() => {});
           },
@@ -16866,7 +16918,7 @@ const MainContextMenu = Object(react["memo"])(({
       children: rotors.map(rotor => {
         return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
           onClick: async () => {
-            ipcRenderer.invoke("setRotor", {
+            MainContextMenu_ipcRenderer.invoke("setRotor", {
               id: rotor.id
             }).then(() => {});
           },
@@ -16875,7 +16927,7 @@ const MainContextMenu = Object(react["memo"])(({
       })
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
       onClick: async () => {
-        ipcRenderer.invoke("openPlayNow").then(() => {});
+        MainContextMenu_ipcRenderer.invoke("openPlayNow").then(() => {});
       },
       label: "\u0421\u0435\u0439\u0447\u0430\u0441 \u0438\u0433\u0440\u0430\u0435\u0442..."
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), Object.keys(genWindows).map(i => /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
@@ -16891,8 +16943,8 @@ const MainContextMenu = Object(react["memo"])(({
       children: /*#__PURE__*/Object(jsx_runtime["jsx"])(components_PlaybackContextMenu, {})
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
       onClick: async () => {
-        ipcRenderer.invoke("openLink", {
-          link: "https://www.tinkoff.ru/cf/AIFQ6kyekt4"
+        MainContextMenu_ipcRenderer.invoke("openLink", {
+          link: "https://yaamp.ru/donate.php"
         }).then(() => {});
       },
       label: "\u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0430\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442"
@@ -21183,6 +21235,9 @@ class webampLazy_Winamp {
   }
   setSkinFromUrl(url) {
     this.store.dispatch(setSkinFromUrl(url));
+  }
+  setSkinFromClient(data) {
+    this.store.dispatch(setSkinFromClient(data));
   }
   async skinIsLoaded() {
     // Wait for the skin to load.
