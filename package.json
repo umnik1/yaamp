@@ -92,7 +92,7 @@
     "publish": {
       "provider": "github",
       "owner": "umnik1",
-      "token": "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"
+      "token": "<token>"
     }
   },
   "jest": {
