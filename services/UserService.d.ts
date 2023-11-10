@@ -16,8 +16,8 @@ export declare class UserService {
      */
     getToken(formData: {
         grant_type: 'password';
-        client_id: '23cabbbdc6cd418abb4b39c32c41195d';
-        client_secret: '53bc75238f0c4d08a118e51fe9203300';
+        client_id: '#########################';
+        client_secret: '#########################';
         username: string;
         password: string;
     }): CancelablePromise<{
