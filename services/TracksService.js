@@ -46,6 +46,27 @@ var TracksService = /** @class */ (function () {
         });
     };
     /**
+     * Дизлайк
+     * @param userId Идентификатор пользователя
+     * @param formData
+     * @returns any Ok
+     * @throws ApiError
+     */
+    TracksService.prototype.dislikeTracks = function (userId, formData) {
+        return this.httpRequest.request({
+            method: 'POST',
+            url: '/users/{userId}/dislikes/tracks/add-multiple',
+            path: {
+                'userId': userId,
+            },
+            formData: formData,
+            mediaType: 'application/x-www-form-urlencoded',
+            errors: {
+                401: "Unauthorized",
+            },
+        });
+    };
+    /**
      * Удаление треков из списка "Мне нравится"
      * @param userId Идентификатор пользователя
      * @param formData

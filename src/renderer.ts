@@ -88,13 +88,16 @@ ipcRenderer.invoke('getLikedTracks').then((rs: any) => {
   rs.result.forEach((element: any) => {
     let artist: any[] = [];
 
-    element.artists.forEach((a: any) => {
-      artist.push(a.name);
-    });
-
-    if (element.durationMs) {
-      webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+    if (element) {
+      element.artists.forEach((a: any) => {
+        artist.push(a.name);
+      });
+  
+      if (element.durationMs) {
+        webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+      }
     }
+
   });
 
   webamp.appendTracks(trackList);
@@ -104,16 +107,48 @@ ipcRenderer.invoke('getLikedTracks').then((rs: any) => {
 ipcRenderer.on("setTracks", (event:any, data: any) => {
   webamp.setTracksToPlay([]);
 
+  let tracksIds: string[] = [];
+
   data.forEach((element: any) => {
     let artist: any[] = [];
 
-    element.artists.forEach((a: any) => {
-      artist.push(a.name);
-    });
-
-    if (element.durationMs) {
-      webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+    if (element) {
+      element.artists.forEach((a: any) => {
+        artist.push(a.name);
+      });
+  
+      if (element.durationMs) {
+        if (!tracksIds.includes(element.id)) {
+          webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+          tracksIds.push(element.id);
+        }
+      }
     }
+    
 
   });
+});
+
+// Display loader
+ipcRenderer.on("setLoader", (event:any) => {
+  const el = document.createElement('div');
+  el.classList.add('spinner');
+  const box = document.getElementById('playlist-window');
+  box.appendChild(el);
+});
+
+ipcRenderer.on("hideLoader", (event:any) => {
+  document.querySelector(".spinner").remove();
+});
+
+// Show message
+ipcRenderer.on("showMessage", (event:any, data: any) => {
+  const el = document.createElement('div');
+  el.classList.add('message');
+  el.innerHTML = data;
+  const box = document.getElementById('playlist-window');
+  box.appendChild(el);
+
+  setTimeout(() => document.querySelector(".message").remove(), 1000);
+
 });

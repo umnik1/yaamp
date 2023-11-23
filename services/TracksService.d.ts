@@ -36,6 +36,21 @@ export declare class TracksService {
         };
     }>;
     /**
+     * Дизлайк
+     * @param userId Идентификатор пользователя
+     * @param formData
+     * @returns any Ok
+     * @throws ApiError
+     */
+    dislikeTracks(userId: number, formData: {
+        'track-ids'?: Array<string>;
+    }): CancelablePromise<{
+        invocationInfo: InvocationInfo;
+        result: {
+            revision?: number;
+        };
+    }>;
+    /**
      * Удаление треков из списка "Мне нравится"
      * @param userId Идентификатор пользователя
      * @param formData

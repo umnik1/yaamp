@@ -1,6 +1,6 @@
 {
   "name": "yaamp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Winamp + Yandex Music",
   "main": "main.js",
   "targets": {
@@ -15,7 +15,7 @@
     "test": "jest",
     "electron": "./node_modules/.bin/electron .",
     "start": "yarn run build && electron .",
-    "pack:win": "electron-builder build -w --x64 --publish always",
+    "pack:win": "electron-builder build -w --x64",
     "pack:linux": "electron-builder build -l --x64",
     "pack:mac": "electron-builder build -m --x64",
     "pack": "yarn run pack:win && yarn run pack:linux && yarn run pack:mac",

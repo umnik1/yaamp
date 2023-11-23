@@ -1,5 +1,5 @@
 const { remote } = require('electron')
-const handleTransparency = require('./transparency.js')
+// const handleTransparency = require('./transparency.js')
 const handleThumbnail = require('./thumbnail.js')
 const handleThumbar = require('./thumbar.js')
 
@@ -32,8 +32,11 @@ window.closeElectronWindow = function () {
 }
 
 window.webampRendered = function () {
-    handleTransparency()
+    // handleTransparency()
     handleThumbnail()
+    var ms = navigator.mediaSession;
+    ms.setActionHandler('nexttrack', window.webampNext);
+    ms.setActionHandler('previoustrack', window.webampPrevious);
     handleThumbar(
         'stopped',
         window.webampPlay,
@@ -52,6 +55,11 @@ window.webampOnTrackDidChange = function(track) {
         state = 'playing'
     }
 
+    var ms = navigator.mediaSession;
+    ms.setActionHandler('nexttrack', window.webampNext);
+    ms.setActionHandler('previoustrack', window.webampPrevious);
+
+
     handleThumbar(
         state,
         window.webampPlay,
@@ -60,3 +68,25 @@ window.webampOnTrackDidChange = function(track) {
         window.webampNext,
     )
 }
+
+setInterval(() => {
+    let height = 12;
+    height += document.getElementById('main-window').getBoundingClientRect().height;
+    height += document.getElementById('playlist-window').getBoundingClientRect().height;
+    height += document.getElementById('equalizer-window').getBoundingClientRect().height;
+    if (document.getElementById('webamp-context-menu')) {
+        // menu height
+        height += 400;
+        // menu position
+        height += document.querySelector('#webamp-context-menu div').getBoundingClientRect().top;
+    }
+    let width = document.getElementById('playlist-window').getBoundingClientRect().width;
+    if (document.getElementById('webamp-context-menu')) {
+        width += document.getElementById('webamp-context-menu').scrollWidth;
+    }
+
+    remote.getCurrentWindow().setBounds({
+        width: width,
+        height: height
+    });
+}, 100)
