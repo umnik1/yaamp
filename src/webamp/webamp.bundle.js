@@ -12450,7 +12450,7 @@ function centerWindowsInContainer(container) {
     }));
   };
 }
-function centerWindowsInView() {
+function windows_centerWindowsInView() {
   return centerWindows({
     left: window.scrollX,
     top: window.scrollY,
@@ -12563,7 +12563,7 @@ function ensureWindowsAreOnScreen() {
     // I give up. Just reset everything.
     dispatch(resetWindowSizes());
     dispatch(stackWindows());
-    dispatch(centerWindowsInView());
+    dispatch(windows_centerWindowsInView());
   };
 }
 // CONCATENATED MODULE: ./js/actionCreators/media.ts
@@ -16098,6 +16098,9 @@ function ResizeTarget_objectSpread(e) { for (var r = 1; r < arguments.length; r+
 
 
 
+const {
+  ipcRenderer: ResizeTarget_ipcRenderer
+} = window.require('electron');
 function ResizeTarget(props) {
   const {
       currentSize,
@@ -16107,6 +16110,7 @@ function ResizeTarget(props) {
     passThroughProps = objectWithoutProperties_default()(props, ResizeTarget_excluded);
   const [mouseDown, setMouseDown] = Object(react["useState"])(false);
   const [mouseStart, setMouseStart] = Object(react["useState"])(null);
+  let currentNewSize = [0, 0];
   Object(react["useEffect"])(() => {
     if (mouseDown === false || mouseStart == null) {
       return;
@@ -16118,10 +16122,16 @@ function ResizeTarget(props) {
       const newWidth = Math.max(0, width + Math.round(x / WINDOW_RESIZE_SEGMENT_WIDTH));
       const newHeight = widthOnly ? width : Math.max(0, height + Math.round(y / WINDOW_RESIZE_SEGMENT_HEIGHT));
       const newSize = [newWidth, newHeight];
+      currentNewSize = newSize;
       props.setWindowSize(newSize);
     };
     window.addEventListener("mousemove", handleMove);
-    const handleMouseUp = () => setMouseDown(false);
+    const handleMouseUp = () => {
+      setMouseDown(false);
+      ResizeTarget_ipcRenderer.invoke('setSize', {
+        size: currentNewSize
+      }).then(rs => {});
+    };
     window.addEventListener("mouseup", handleMouseUp);
     return () => {
       window.removeEventListener("mousemove", handleMove);
@@ -17133,6 +17143,9 @@ const PlaybackContextMenu = () => {
 
 
 
+const {
+  ipcRenderer: OptionsContextMenu_ipcRenderer
+} = window.require('electron');
 const OptionsContextMenu = () => {
   const toggleTimeMode = useActionCreator(media_toggleTimeMode);
   const toggleDoubleSizeMode = useActionCreator(windows_toggleDoubleSizeMode);
@@ -17144,6 +17157,16 @@ const OptionsContextMenu = () => {
   const shuffle = useTypedSelector(getShuffle);
   return /*#__PURE__*/Object(jsx_runtime["jsxs"])(jsx_runtime["Fragment"], {
     children: [/*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+      label: "\u0420\u0430\u0437\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043E\u043A\u043D\u043E",
+      onClick: async () => {
+        OptionsContextMenu_ipcRenderer.invoke("movingWindowStarted").then(() => {});
+      }
+    }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+      label: "\u0417\u0430\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043E\u043A\u043D\u043E",
+      onClick: async () => {
+        OptionsContextMenu_ipcRenderer.invoke("movingWindowEnded").then(() => {});
+      }
+    }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
       label: "Time elapsed",
       hotkey: "(Ctrl+T toggles)",
       onClick: toggleTimeMode,
@@ -17234,6 +17257,7 @@ const MainContextMenu = /*#__PURE__*/Object(react["memo"])(({
   const [searchResult, setsearchResult] = Object(react["useState"])([]);
   const [lendings, setLendings] = Object(react["useState"])([]);
   const [data, setData] = Object(react["useState"])([]);
+  const [userSettings, setUserSettings] = Object(react["useState"])([]);
   const handleChange = event => {
     MainContextMenu_ipcRenderer.invoke("search", {
       searchText: event.target.value
@@ -17261,6 +17285,9 @@ const MainContextMenu = /*#__PURE__*/Object(react["memo"])(({
       });
       MainContextMenu_ipcRenderer.invoke('lendings').then(rs => {
         setLendings(rs);
+      });
+      MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
+        setUserSettings(JSON.parse(rs));
       });
     }
     menuOpened();
@@ -17300,16 +17327,19 @@ const MainContextMenu = /*#__PURE__*/Object(react["memo"])(({
         MainContextMenu_ipcRenderer.invoke("setMyloved").then(() => {});
       },
       label: "\u041B\u044E\u0431\u0438\u043C\u044B\u0435 \u0442\u0440\u0435\u043A\u0438"
-    }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), lendings.map(result => {
-      return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
-        onClick: async () => {
-          MainContextMenu_ipcRenderer.invoke("setPlaylist", {
-            uid: result.data.data.uid,
-            kind: result.data.data.kind
-          }).then(() => {});
-        },
-        label: result.data.data.title
-      });
+    }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(Parent, {
+      label: "\u041D\u0430\u0447\u0430\u043B\u044C\u043D\u044B\u0435 \u043F\u043B\u0435\u0439\u043B\u0438\u0441\u0442\u044B",
+      children: lendings.map(result => {
+        return /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+          onClick: async () => {
+            MainContextMenu_ipcRenderer.invoke("setPlaylist", {
+              uid: result.data.data.uid,
+              kind: result.data.data.kind
+            }).then(() => {});
+          },
+          label: result.data.data.title
+        });
+      })
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsxs"])(Parent, {
       label: "\u041F\u043E\u0438\u0441\u043A...",
       children: [/*#__PURE__*/Object(jsx_runtime["jsx"])("li", {
@@ -17408,7 +17438,50 @@ const MainContextMenu = /*#__PURE__*/Object(react["memo"])(({
       checked: genWindows[i].open,
       onClick: () => toggleWindow(i),
       hotkey: genWindows[i].hotkey
-    }, i)), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(SkinsContextMenu, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(Parent, {
+    }, i)), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(SkinsContextMenu, {}), /*#__PURE__*/Object(jsx_runtime["jsx"])(ContextMenu_Hr, {}), /*#__PURE__*/Object(jsx_runtime["jsxs"])(Parent, {
+      label: "\u0423\u0432\u0435\u043B\u0438\u0447\u0435\u043D\u0438\u0435",
+      children: [/*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+        onClick: async () => {
+          MainContextMenu_ipcRenderer.invoke("setRatio", {
+            value: 1
+          }).then(() => {});
+        },
+        label: "x1",
+        checked: userSettings.zoom === 1
+      }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+        onClick: async () => {
+          MainContextMenu_ipcRenderer.invoke("setRatio", {
+            value: 1.2
+          }).then(() => {});
+        },
+        label: "x1.2",
+        checked: userSettings.zoom === 1.2
+      }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+        onClick: async () => {
+          MainContextMenu_ipcRenderer.invoke("setRatio", {
+            value: 1.4
+          }).then(() => {});
+        },
+        label: "x1.4",
+        checked: userSettings.zoom === 1.4
+      }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+        onClick: async () => {
+          MainContextMenu_ipcRenderer.invoke("setRatio", {
+            value: 1.6
+          }).then(() => {});
+        },
+        label: "x1.6",
+        checked: userSettings.zoom === 1.6
+      }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Node, {
+        onClick: async () => {
+          MainContextMenu_ipcRenderer.invoke("setRatio", {
+            value: 1.8
+          }).then(() => {});
+        },
+        label: "x1.8",
+        checked: userSettings.zoom === 1.8
+      })]
+    }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Parent, {
       label: "Options",
       children: /*#__PURE__*/Object(jsx_runtime["jsx"])(components_OptionsContextMenu, {})
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])(Parent, {
@@ -17444,14 +17517,19 @@ function WindowManager_objectSpread(e) { for (var r = 1; r < arguments.length; r
 
 
 
+const {
+  ipcRenderer: WindowManager_ipcRenderer
+} = window.require('electron');
 const abuts = (a, b) => {
   // TODO: This is kinda a hack. They should really be touching, not just within snapping distance.
   // Also, overlapping should not count.
   const wouldMoveTo = snap(a, b);
   return wouldMoveTo.x !== undefined || wouldMoveTo.y !== undefined;
 };
+let posOnStart = false;
 function useHandleMouseDown(propsWindows) {
   const windowsInfo = useTypedSelector(getWindowsInfo);
+  const getOpen = useTypedSelector(selectors_getWindowOpen);
   const getWindowHidden = useTypedSelector(selectors_getWindowHidden);
   const browserWindowSize = useTypedSelector(getBrowserWindowSize);
   const updateWindowPositions = useActionCreator(windows_updateWindowPositions);
@@ -17536,7 +17614,53 @@ function WindowManager({
   const windowsInfo = useTypedSelector(getWindowsInfo);
   const setFocusedWindow = useActionCreator(windows_setFocusedWindow);
   const handleMouseDown = useHandleMouseDown(propsWindows);
+  const updateWindowPositions = useActionCreator(windows_updateWindowPositions);
+  const centerWindowsInView = useActionCreator(windows_centerWindowsInView);
+  const setWindowSize = useActionCreator(windows_setWindowSize);
+  const toggleWindow = useActionCreator(windows_toggleWindow);
   const windows = windowsInfo.filter(w => propsWindows[w.key]);
+  if (!posOnStart) {
+    if (document.getElementById('playlist-window')) {
+      WindowManager_ipcRenderer.invoke('getSettings').then(rs => {
+        const settingsData = JSON.parse(rs);
+        if (settingsData.windows) {
+          WindowManager_ipcRenderer.invoke('movingWindowStarted').then(() => {
+            let obj = windows.find((o, i) => {
+              if (o.key === 'main') {
+                windows[i].x = settingsData.windows.mainWindow.x;
+                windows[i].y = settingsData.windows.mainWindow.y;
+              }
+              if (o.key === 'playlist') {
+                windows[i].x = settingsData.windows.playlistWindow.x;
+                windows[i].y = settingsData.windows.playlistWindow.y;
+                setWindowSize(o.key, settingsData.windows.playlistWindow.size);
+              }
+              if (o.key === 'equalizer') {
+                windows[i].x = settingsData.windows.equalizerWindow.x;
+                windows[i].y = settingsData.windows.equalizerWindow.y;
+              }
+            });
+            const newPositions = windowsInfo.reduce((pos, w) => WindowManager_objectSpread(WindowManager_objectSpread({}, pos), {}, {
+              [w.key]: {
+                x: w.x,
+                y: w.y
+              }
+            }), {});
+            updateWindowPositions(newPositions, false);
+            centerWindowsInView();
+            if (!settingsData.windows.playlistWindow.visible) {
+              toggleWindow('playlist');
+            }
+            if (!settingsData.windows.equalizerWindow.visible) {
+              toggleWindow('equalizer');
+            }
+            WindowManager_ipcRenderer.invoke('movingWindowEndedWithoutSave').then(() => {});
+            posOnStart = true;
+          });
+        }
+      });
+    }
+  }
   const onBlur = Object(react["useCallback"])(
   // I give up on trying to type things with `relatedTarget`.
   e => {
@@ -17551,6 +17675,7 @@ function WindowManager({
   }, [setFocusedWindow]);
   return /*#__PURE__*/Object(jsx_runtime["jsx"])(jsx_runtime["Fragment"], {
     children: windows.map(w => /*#__PURE__*/Object(jsx_runtime["jsx"])("div", {
+      id: w.key,
       onBlur: onBlur,
       onMouseDown: e => {
         handleMouseDown(w.key, e);
@@ -18229,6 +18354,9 @@ const Close = /*#__PURE__*/Object(react["memo"])(() => {
 
 
 
+const {
+  ipcRenderer: ClutterBar_ipcRenderer
+} = window.require('electron');
 function setFocusDouble() {
   return actionCreators_setFocus("double");
 }
@@ -18251,9 +18379,17 @@ const ClutterBar = /*#__PURE__*/Object(react["memo"])(() => {
         id: "button-o"
       })
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])("div", {
-      id: "button-a"
+      id: "button-a",
+      title: "Лайк",
+      onMouseUp: async () => {
+        ClutterBar_ipcRenderer.invoke("setLike").then(() => {});
+      }
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])("div", {
-      id: "button-i"
+      id: "button-i",
+      title: "Моя волна",
+      onMouseUp: async () => {
+        ClutterBar_ipcRenderer.invoke("setMywave").then(() => {});
+      }
     }), /*#__PURE__*/Object(jsx_runtime["jsx"])("div", {
       title: "Toggle Doublesize Mode",
       id: "button-d",
@@ -21659,6 +21795,9 @@ class webampLazy_Winamp {
   nextTrack() {
     this.store.dispatch(media_next());
   }
+  centerWindowsInView() {
+    this.store.dispatch(windows_centerWindowsInView());
+  }
   previousTrack() {
     this.store.dispatch(media_previous());
   }
@@ -24656,7 +24795,7 @@ exports = module.exports = __webpack_require__(10)(false);
 
 
 // module
-exports.push([module.i, "#webamp #main-window{position:absolute;height:116px;width:275px;image-rendering:-moz-crisp-edges;image-rendering:-o-crisp-edges;image-rendering:-webkit-optimize-contrast;image-rendering:pixelated;-ms-interpolation-mode:nearest-neighbor}#webamp #title-bar{position:absolute;top:0;left:0;height:14px;width:275px;-webkit-app-region:drag}#webamp #close,#webamp #minimize,#webamp #option-context,#webamp #shade{position:absolute;height:9px;width:9px;top:3px;-webkit-app-region:no-drag}#webamp #title-bar #option{width:100%;height:100%}#webamp #title-bar #option-context{left:6px}#webamp #title-bar #minimize{left:244px}#webamp #title-bar #shade{left:254px}#webamp #title-bar #close{left:264px}#webamp #clutter-bar{position:absolute;top:22px;left:10px;height:43px;width:8px}#webamp #clutter-bar div{position:absolute;height:7px;width:8px;left:0}#webamp #clutter-bar #button-o{top:3px;height:8px}#webamp #clutter-bar #button-a{top:11px}#webamp #clutter-bar #button-i{top:18px}#webamp #clutter-bar #button-d{top:25px;height:8px}#webamp #clutter-bar #button-v{top:33px}#webamp #play-pause{position:absolute;top:28px;left:26px;height:9px;width:9px;background-repeat:no-repeat}#webamp #work-indicator.selected,#webamp .play #work-indicator{position:absolute;top:28px;left:24px;height:9px;width:3px}#webamp .status #time{position:absolute;left:39px;top:26px;height:13px;width:59px}#webamp .stop .status #time{display:none}#webamp .pause .status #time{animation:blink 2s step-start 1s infinite;-webkit-animation:blink 2s step-start 1s infinite}#webamp .status #time #minus-sign{position:absolute;top:6px;left:-1px;width:5px;height:1px}#webamp .status #time #minute-first-digit{position:absolute;pointer-events:none;left:9px;height:13px;width:9px}#webamp .status #time #minute-second-digit{position:absolute;pointer-events:none;left:21px;height:13px;width:9px}#webamp .status #time #second-first-digit{position:absolute;pointer-events:none;left:39px;height:13px;width:9px}#webamp .status #time #second-second-digit{position:absolute;pointer-events:none;left:51px;height:13px;width:9px}#webamp #main-window #visualizer{position:absolute;top:43px;left:24px}#webamp #main-window.shade #visualizer{top:5px;left:79px}#webamp #main-window.stop #visualizer,#webamp .text{display:none}#webamp #marquee{top:24px;width:155px;display:block;padding:3px 0}#webamp #marquee,#webamp .media-info #kbps{position:absolute;left:111px;height:6px;overflow:hidden}#webamp .media-info #kbps{top:43px;width:15px}#webamp .stop .media-info #kbps{display:none}#webamp .media-info #khz{position:absolute;left:156px;top:43px;width:10px;height:6px;overflow:hidden}#webamp .stop .media-info #khz{display:none}#webamp .media-info .mono-stereo{position:absolute;left:212px;top:41px;width:57px;height:12px}#webamp .media-info .mono-stereo div{position:absolute;height:12px}#webamp .media-info .mono-stereo #mono{width:27px}#webamp .media-info .mono-stereo #stereo{left:27px;width:29px}#webamp #volume{position:absolute;left:107px;top:57px;height:13px;width:68px;background-position:0 0}#webamp #volume input{height:13px;width:65px;display:block}#webamp #volume input::-webkit-slider-thumb{top:1px;height:11px;width:14px}#webamp #volume input::-moz-range-thumb{top:1px;height:11px;width:14px}#webamp #balance{position:absolute;left:177px;top:57px;height:13px;width:38px;background-position:0 0}#webamp #balance::-webkit-slider-thumb{top:1px;height:11px;width:14px}#webamp #balance::-moz-range-thumb{top:1px;height:11px;width:14px}#webamp .windows{position:absolute;left:219px;top:58px;width:46px;height:12px}#webamp .windows div{position:absolute;width:23px;height:12px}#webamp .windows #equalizer-button{left:0}#webamp .windows #playlist-button{left:23px}#webamp #position{position:absolute;left:16px;top:72px;width:248px;height:10px}#webamp #position::-webkit-slider-thumb{height:10px;width:29px;-webkit-box-sizing:border-box;position:relative}#webamp #position::-moz-range-thumb{height:10px;width:29px}#webamp .stop #position::-webkit-slider-thumb{visibility:hidden}#webamp .stop #position::-moz-range-thumb{visibility:hidden}#webamp .play #position::-webkit-slider-thumb{visibility:visible}#webamp .actions div{height:18px;width:23px;position:absolute}#webamp .actions #previous{top:88px;left:16px}#webamp .actions #play{top:88px;left:39px}#webamp .actions #pause{top:88px;left:62px}#webamp .actions #stop{top:88px;left:85px}#webamp .actions #next{top:88px;left:108px;width:22px}#webamp #eject{position:absolute;top:89px;left:136px;height:16px;width:22px}#webamp .shuffle-repeat{position:absolute;top:89px;left:164px;width:74px}#webamp .shuffle-repeat div{position:absolute;height:15px}#webamp .shuffle-repeat #shuffle{width:47px}#webamp .shuffle-repeat #repeat{left:46px;width:28px}#webamp #about{position:absolute;top:91px;left:253px;height:15px;width:13px}#webamp .digit{position:absolute;display:inline-block;width:9px;height:13px;background-repeat:no-repeat;text-indent:-9999px}#webamp #main-window.shade{height:14px}#webamp .shade #balance,#webamp .shade #volume,#webamp .shade .media-info,#webamp .shade .shuffle-repeat,#webamp .shade .status,#webamp .shade .windows{display:none}#webamp .shade .actions div{position:absolute}#webamp .shade .actions #previous,#webamp .shade .actions #previous:active{background:none;height:10px;width:7px;top:2px;left:169px}#webamp .shade .actions #play,#webamp .shade .actions #play:active{background:none;height:10px;width:10px;top:2px;left:176px}#webamp .shade .actions #pause,#webamp .shade .actions #pause:active{background:none;height:10px;width:9px;top:2px;left:186px}#webamp .shade .actions #stop,#webamp .shade .actions #stop:active{background:none;height:10px;width:9px;top:2px;left:195px}#webamp .shade .actions #next,#webamp .shade .actions #next:active{background:none;height:10px;width:10px;top:2px;left:204px}#webamp .shade #eject,#webamp .shade #eject:active{height:10px;width:10px;top:2px;left:215px;background:none}#webamp .shade #position{position:absolute;left:226px;top:4px;width:17px;height:7px}#webamp .shade #position::-webkit-slider-thumb{height:7px;width:3px;background:none}#webamp .shade #position::-moz-range-thumb{height:7px;width:3px;background:none}#webamp #main-window .mini-time{position:absolute;top:4px;left:127px}", ""]);
+exports.push([module.i, "#webamp #main-window{position:absolute;height:116px;width:275px;image-rendering:-moz-crisp-edges;image-rendering:-o-crisp-edges;image-rendering:-webkit-optimize-contrast;image-rendering:pixelated;-ms-interpolation-mode:nearest-neighbor}#webamp #title-bar{position:absolute;top:0;left:0;height:14px;width:275px;-webkit-app-region:drag}#webamp #close,#webamp #minimize,#webamp #option-context,#webamp #shade{position:absolute;height:9px;width:9px;top:3px;-webkit-app-region:no-drag;cursor:pointer}#webamp #title-bar #option{width:100%;height:100%}#webamp #title-bar #option-context{left:6px}#webamp #title-bar #minimize{left:244px}#webamp #title-bar #shade{left:254px}#webamp #title-bar #close{left:264px}#webamp #clutter-bar{position:absolute;top:22px;left:10px;height:43px;width:8px}#webamp #clutter-bar div{position:absolute;height:7px;width:8px;left:0}#webamp #clutter-bar #button-o{top:3px;height:8px}#webamp #clutter-bar #button-a{top:11px}#webamp #clutter-bar #button-i{top:18px}#webamp #clutter-bar #button-d{top:25px;height:8px}#webamp #clutter-bar #button-v{top:33px}#webamp #play-pause{position:absolute;top:28px;left:26px;height:9px;width:9px;background-repeat:no-repeat}#webamp #work-indicator.selected,#webamp .play #work-indicator{position:absolute;top:28px;left:24px;height:9px;width:3px}#webamp .status #time{position:absolute;left:39px;top:26px;height:13px;width:59px}#webamp .stop .status #time{display:none}#webamp .pause .status #time{animation:blink 2s step-start 1s infinite;-webkit-animation:blink 2s step-start 1s infinite}#webamp .status #time #minus-sign{position:absolute;top:6px;left:-1px;width:5px;height:1px}#webamp .status #time #minute-first-digit{position:absolute;pointer-events:none;left:9px;height:13px;width:9px}#webamp .status #time #minute-second-digit{position:absolute;pointer-events:none;left:21px;height:13px;width:9px}#webamp .status #time #second-first-digit{position:absolute;pointer-events:none;left:39px;height:13px;width:9px}#webamp .status #time #second-second-digit{position:absolute;pointer-events:none;left:51px;height:13px;width:9px}#webamp #main-window #visualizer{position:absolute;top:43px;left:24px}#webamp #main-window.shade #visualizer{top:5px;left:79px}#webamp #main-window.stop #visualizer,#webamp .text{display:none}#webamp #marquee{top:24px;width:155px;display:block;padding:3px 0}#webamp #marquee,#webamp .media-info #kbps{position:absolute;left:111px;height:6px;overflow:hidden}#webamp .media-info #kbps{top:43px;width:15px}#webamp .stop .media-info #kbps{display:none}#webamp .media-info #khz{position:absolute;left:156px;top:43px;width:10px;height:6px;overflow:hidden}#webamp .stop .media-info #khz{display:none}#webamp .media-info .mono-stereo{position:absolute;left:212px;top:41px;width:57px;height:12px}#webamp .media-info .mono-stereo div{position:absolute;height:12px}#webamp .media-info .mono-stereo #mono{width:27px}#webamp .media-info .mono-stereo #stereo{left:27px;width:29px}#webamp #volume{position:absolute;left:107px;top:57px;height:13px;width:68px;background-position:0 0}#webamp #volume input{height:13px;width:65px;display:block}#webamp #volume input::-webkit-slider-thumb{top:1px;height:11px;width:14px}#webamp #volume input::-moz-range-thumb{top:1px;height:11px;width:14px}#webamp #balance{position:absolute;left:177px;top:57px;height:13px;width:38px;background-position:0 0}#webamp #balance::-webkit-slider-thumb{top:1px;height:11px;width:14px}#webamp #balance::-moz-range-thumb{top:1px;height:11px;width:14px}#webamp .windows{position:absolute;left:219px;top:58px;width:46px;height:12px}#webamp .windows div{position:absolute;width:23px;height:12px}#webamp .windows #equalizer-button{left:0}#webamp .windows #playlist-button{left:23px}#webamp #position{position:absolute;left:16px;top:72px;width:248px;height:10px}#webamp #position::-webkit-slider-thumb{height:10px;width:29px;-webkit-box-sizing:border-box;position:relative}#webamp #position::-moz-range-thumb{height:10px;width:29px}#webamp .stop #position::-webkit-slider-thumb{visibility:hidden}#webamp .stop #position::-moz-range-thumb{visibility:hidden}#webamp .play #position::-webkit-slider-thumb{visibility:visible}#webamp .actions div{height:18px;width:23px;position:absolute}#webamp .actions #previous{top:88px;left:16px}#webamp .actions #play{top:88px;left:39px}#webamp .actions #pause{top:88px;left:62px}#webamp .actions #stop{top:88px;left:85px}#webamp .actions #next{top:88px;left:108px;width:22px}#webamp #eject{position:absolute;top:89px;left:136px;height:16px;width:22px}#webamp .shuffle-repeat{position:absolute;top:89px;left:164px;width:74px}#webamp .shuffle-repeat div{position:absolute;height:15px}#webamp .shuffle-repeat #shuffle{width:47px}#webamp .shuffle-repeat #repeat{left:46px;width:28px}#webamp #about{position:absolute;top:91px;left:253px;height:15px;width:13px}#webamp .digit{position:absolute;display:inline-block;width:9px;height:13px;background-repeat:no-repeat;text-indent:-9999px}#webamp #main-window.shade{height:14px}#webamp .shade #balance,#webamp .shade #volume,#webamp .shade .media-info,#webamp .shade .shuffle-repeat,#webamp .shade .status,#webamp .shade .windows{display:none}#webamp .shade .actions div{position:absolute}#webamp .shade .actions #previous,#webamp .shade .actions #previous:active{background:none;height:10px;width:7px;top:2px;left:169px}#webamp .shade .actions #play,#webamp .shade .actions #play:active{background:none;height:10px;width:10px;top:2px;left:176px}#webamp .shade .actions #pause,#webamp .shade .actions #pause:active{background:none;height:10px;width:9px;top:2px;left:186px}#webamp .shade .actions #stop,#webamp .shade .actions #stop:active{background:none;height:10px;width:9px;top:2px;left:195px}#webamp .shade .actions #next,#webamp .shade .actions #next:active{background:none;height:10px;width:10px;top:2px;left:204px}#webamp .shade #eject,#webamp .shade #eject:active{height:10px;width:10px;top:2px;left:215px;background:none}#webamp .shade #position{position:absolute;left:226px;top:4px;width:17px;height:7px}#webamp .shade #position::-webkit-slider-thumb{height:7px;width:3px;background:none}#webamp .shade #position::-moz-range-thumb{height:7px;width:3px;background:none}#webamp #main-window .mini-time{position:absolute;top:4px;left:127px}", ""]);
 
 // exports
 

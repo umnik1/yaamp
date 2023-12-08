@@ -78,6 +78,11 @@ window.webampPrevious = function () {
   webamp.previousTrack()
 }
 
+window.centerWindowsInView = function () {
+  // @ts-ignore
+  webamp.centerWindowsInView()
+}
+
 ipcRenderer.invoke('getSkin').then((rs: any) => {
   if (rs) {
     webamp.setSkinFromClient(rs);

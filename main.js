@@ -1,7 +1,7 @@
 const isDev = require('electron-is-dev')
 const path = require('path')
 const url = require('url')
-const { ipcMain, webContents, session } = require('electron')
+const { ipcMain, webContents, session, remote } = require('electron')
 const crypto = require("crypto");
 const DiscordRPC =  require('discord-rpc');
 
@@ -24,6 +24,7 @@ if (isDev) {
 
 const tokenPath = app.getPath("userData") + '/token.json';
 const skinPath = app.getPath("userData") + '/skin.json';
+const settingsPath = app.getPath("userData") + '/settings.json';
 const URL_WITH_ACCESS_TOKEN_REGEX = 'https:\\/\\/music\\.yandex\\.(?:ru|com|by|kz|ua)\\/#access_token=([^&]*)';
 
 let nowPlaying = 0;
@@ -31,16 +32,16 @@ let nowPlaylist = [];
 
 let yaAuthToken = '';
 let skinData = '';
+let settingsData = {};
+
 const sessionId = crypto.randomBytes(20).toString('hex');
 const clientId = '1161295534770892860';
 
-if (process.platform !== 'linux' && process.platform !== 'darwin') {
-  DiscordRPC.register(clientId);
+DiscordRPC.register(clientId);
 
-  const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+const rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
-  rpc.login({ clientId }).catch(console.error);
-}
+rpc.login({ clientId }).catch(console.error);
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -57,52 +58,52 @@ function createWindow() {
     },
   )
 
-  const {
-    width,
-    height
-  } = electron.screen.getPrimaryDisplay().size
-
   app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
   // For Linux: Remove "resizable"
 
   // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    transparent: true,
-    useContentSize: false,
-    frame: false,
-    hasShadow: false,
-    show: false,
-    resizable: false,
-    fullscreenable: false,
-    icon: path.join(__dirname, 'res/icon.png'),
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
-      webSecurity: false,
-      preload: path.join(__dirname, 'src/node/preload.js'),
-    }
-  })
+  getSettingsFromFile().then( () => {
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(url.format({
-    pathname: './dist/index.html',
-    protocol: 'file:',
-    slashes: true
-  }))
+    mainWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      transparent: true,
+      useContentSize: false,
+      frame: false,
+      hasShadow: false,
+      show: false,
+      resizable: false,
+      fullscreenable: false,
+      icon: path.join(__dirname, 'res/icon.png'),
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+        enableRemoteModule: true,
+        webSecurity: false,
+        preload: path.join(__dirname, 'src/node/preload.js'),
+      }
+    })
 
-  // and show window once it's ready (to prevent flashing)
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show()
-    checkForUpdatesAndNotify()
-  })
+    // and load the index.html of the app.
+    mainWindow.loadURL(url.format({
+      pathname: './dist/index.html',
+      protocol: 'file:',
+      slashes: true
+    }))
 
-  mainWindow.on('closed', function () {
-    // Dereference the window object
-    mainWindow = null
-  })
+    // and show window once it's ready (to prevent flashing)
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.webContents.setZoomFactor(settingsData.zoom ? settingsData.zoom : 1)
+      mainWindow.show()
+      checkForUpdatesAndNotify()
+    })
+
+    mainWindow.on('closed', function () {
+      // Dereference the window object
+      mainWindow = null
+    })
+
+  });
 
 }
 
@@ -161,6 +162,13 @@ const getSkinFromFile = async()=>{
 }
 
 
+const getSettingsFromFile = async()=>{
+  try {
+    const result = await readFile(settingsPath, 'binary')
+    settingsData = JSON.parse(result);
+  } catch (error) {
+    fs.writeFile(settingsPath, JSON.stringify({zoom: 1}), (error) => {});  }
+}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -302,7 +310,6 @@ getTokenFromFile().then( () => {
       return data;
     })
 
-    if (process.platform !== 'linux' && process.platform !== 'darwin') {
       // Discord Integration
 
       // Check on uploaded track
@@ -338,8 +345,6 @@ getTokenFromFile().then( () => {
         })
       }
       
-    }
-
     return data;
 
   })
@@ -674,6 +679,74 @@ getTokenFromFile().then( () => {
       mainWindow.webContents.send('hideLoader');
     })
 
+  })
+
+
+  // Разблокировка окна для перетаскивания окон
+  ipcMain.handle('movingWindowStarted', async (event) => {
+    const {width, height} = electron.screen.getPrimaryDisplay().workAreaSize
+    mainWindow.webContents.send('unlockWindow');
+
+    mainWindow.setBounds({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height
+    })
+
+  })
+  
+  // Блокировка окна для перетаскивания окон
+  ipcMain.handle('movingWindowEnded', async (event) => {
+    mainWindow.webContents.send('lockWindow');
+    mainWindow.center();
+  })
+
+  // Блокировка окна для перетаскивания окон без сохраения
+  ipcMain.handle('movingWindowEndedWithoutSave', async (event) => {
+    mainWindow.webContents.send('lockWindowWithoutSave');
+    setTimeout(() => {
+
+    mainWindow.center();
+  }, 100)
+
+  })
+
+  // Увеличение окна
+  ipcMain.handle('setRatio', async (event, data) => {
+    settingsData.zoom = data.value;
+
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});
+
+    setTimeout(() => {
+      app.relaunch();
+      app.quit();
+    }, 3000)
+
+  })
+
+  // Получение настроек
+  ipcMain.handle('getSettings', async (event) => {
+
+    return JSON.stringify(settingsData);
+  })
+
+
+  ipcMain.on('setWinodwsPositions', async (event, data) => {
+    settingsData.windows = JSON.parse(data);
+
+    console.log(settingsData);
+
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});
+  })
+
+
+  // Задать размер
+  ipcMain.handle('setSize', async (event, data) => {
+
+    settingsData.windows.playlistWindow.size = data.size;
+
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});
   })
 
 })

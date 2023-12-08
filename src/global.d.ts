@@ -5,6 +5,7 @@ declare global {
         minimizeElectronWindow: () => void
         closeElectronWindow: () => void
         webampRendered: () => void
+        centerWindowsInView: () => void
         webampOnTrackDidChange: (track: Track) => void
         webampPlay: () => void
         webampPause: () => void
