@@ -138,6 +138,7 @@ export default class Webamp {
 
 
     public setSkinFromClient(data: string): void;
+    public setEqFromClient(data: string): void;
 
     /**
      * Webamp will wait until it has fetched the skin and fully parsed it and then render itself.

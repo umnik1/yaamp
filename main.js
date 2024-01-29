@@ -24,6 +24,7 @@ if (isDev) {
 
 const tokenPath = app.getPath("userData") + '/token.json';
 const skinPath = app.getPath("userData") + '/skin.json';
+const eqPath = app.getPath("userData") + '/eq.json';
 const settingsPath = app.getPath("userData") + '/settings.json';
 const URL_WITH_ACCESS_TOKEN_REGEX = 'https:\\/\\/music\\.yandex\\.(?:ru|com|by|kz|ua)\\/#access_token=([^&]*)';
 
@@ -32,6 +33,7 @@ let nowPlaylist = [];
 
 let yaAuthToken = '';
 let skinData = '';
+let eqData = '';
 let settingsData = {};
 
 const sessionId = crypto.randomBytes(20).toString('hex');
@@ -159,6 +161,14 @@ const getSkinFromFile = async()=>{
     skinData = result;
   } catch (error) {
     fs.writeFile(skinPath, '', (error) => {});  }
+}
+
+const getEQFromFile = async()=>{
+  try {
+    const result = await readFile(eqPath,'binary')
+    eqData = result;
+  } catch (error) {
+    fs.writeFile(eqPath, '', (error) => {});  }
 }
 
 
@@ -300,52 +310,57 @@ getTokenFromFile().then( () => {
   // Получаем URL трека по ID
   ipcMain.handle('getTrackByID', async (event, trackid) => {
 
-    nowPlaying = trackid;
+    if (!trackid.includes('blob')) {
+      nowPlaying = trackid;
 
-    const data = await getTrackUrl(client, trackid).then((data) => {
-        return data;
-    })
-
-    await client.tracks.playAudio({"track-id": trackid, "from": 'web-main-rup-radio-main', "timestamp": new Date().toISOString(), 'uid': accountData.uid, 'play-id': sessionId}).then((data) => {
-      return data;
-    })
-
-      // Discord Integration
-
-      // Check on uploaded track
-      if (!/^.*-.*-.*-.*-.*$/.test(trackid)) {
-        await client.tracks.getTracks({"track-ids": [trackid]}).then((data) => {
-          const element = data.result[0];
-          const startTimestamp = new Date();
-
-          let artist = [];
-
-          element.artists.forEach((a) => {
-            artist.push(a.name);
-          });
-
-          const presObj = {
-            details: `${element.title}`,
-            state: `${artist.join(', ')}`,
-            largeImageKey: 'https://' + element.coverUri.replace("%%", "200x200"),
-            largeImageText: `${artist.join(', ')} - ${element.title}`,
-            smallImageKey: 'https://yaamp.ru/icon.png',
-            smallImageText: 'Yaamp.ru',
-            buttons: [
-              {
-                label: 'Listen this track',
-                url: `https://music.yandex.ru/track/${element.id}`,
-              },
-            ],
-          };
-        
-          rpc.setActivity(presObj);
-
+      const data = await getTrackUrl(client, trackid).then((data) => {
           return data;
-        })
-      }
-      
-    return data;
+      })
+  
+      await client.tracks.playAudio({"track-id": trackid, "from": 'web-main-rup-radio-main', "timestamp": new Date().toISOString(), 'uid': accountData.uid, 'play-id': sessionId}).then((data) => {
+        return data;
+      })
+  
+        // Discord Integration
+  
+        // Check on uploaded track
+        if (!/^.*-.*-.*-.*-.*$/.test(trackid)) {
+          await client.tracks.getTracks({"track-ids": [trackid]}).then((data) => {
+            const element = data.result[0];
+            const startTimestamp = new Date();
+  
+            let artist = [];
+  
+            element.artists.forEach((a) => {
+              artist.push(a.name);
+            });
+  
+            const presObj = {
+              details: `${element.title}`,
+              state: `${artist.join(', ')}`,
+              largeImageKey: 'https://' + element.coverUri.replace("%%", "200x200"),
+              largeImageText: `${artist.join(', ')} - ${element.title}`,
+              smallImageKey: 'https://yaamp.ru/icon.png',
+              smallImageText: 'Yaamp.ru',
+              buttons: [
+                {
+                  label: 'Listen this track',
+                  url: `https://music.yandex.ru/track/${element.id}`,
+                },
+              ],
+            };
+          
+            rpc.setActivity(presObj);
+  
+            return data;
+          })
+        }
+        
+      return data;
+    } else {
+
+      return trackid;
+    }
 
   })
 
@@ -747,6 +762,23 @@ getTokenFromFile().then( () => {
     settingsData.windows.playlistWindow.size = data.size;
 
     fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});
+  })
+
+  // Сохранение EQ
+  ipcMain.handle('setEQ', async (event, data) => {
+    fs.writeFile(eqPath, data.link, (error) => {});
+    console.log(data.link);
+    mainWindow.webContents.send('showMessage', 'EQ сохранён');
+    return true;
+  })
+
+  // Получение EQ
+  ipcMain.handle('getEq', async (event, data) => {
+    eqData = await getEQFromFile().then( () => {
+      return eqData;
+    });
+
+    return eqData;
   })
 
 })

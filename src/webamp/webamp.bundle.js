@@ -15026,7 +15026,7 @@ function files_openEqfFileDialog() {
   return _openFileDialog(".eqf", "EQ");
 }
 function files_openMediaFileDialog() {
-  return _openFileDialog(null, "MEDIA");
+  return _openFileDialog(".mp3", "MEDIA");
 }
 function files_openSkinFileDialog() {
   return _openFileDialog(".zip, .wsz", "SKIN");
@@ -15224,6 +15224,13 @@ function setEqFromFileReference(fileReference) {
     dispatch(files_setEqFromObject(preset));
   };
 }
+function setEqFromClient(data) {
+  return async dispatch => {
+    const eqf = JSON.parse(data);
+    const preset = eqf.presets[0];
+    dispatch(files_setEqFromObject(preset));
+  };
+}
 function files_setEqFromObject(preset) {
   return dispatch => {
     dispatch(setPreamp(normalizeEqBand(preset.preamp)));
@@ -15237,12 +15244,18 @@ function files_downloadPreset() {
   return (dispatch, getState) => {
     const state = getState();
     const data = getEqfData(state);
+    console.log(data);
     const arrayBuffer = Object(winamp_eqf["creator"])(data);
-    const base64 = base64FromArrayBuffer(arrayBuffer);
-    const dataURI = `data:application/zip;base64,${base64}`;
-    downloadURI(dataURI, "entry.eqf");
+    // const base64 = Utils.base64FromArrayBuffer(arrayBuffer);
+    // const dataURI = `data:application/zip;base64,${base64}`;
+    ipcRenderer.invoke("setEQ", {
+      link: JSON.stringify(data)
+    }).then(() => {});
+
+    // Utils.downloadURI(dataURI, "entry.eqf");
   };
 }
+
 function files_downloadHtmlPlaylist() {
   return (dispatch, getState) => {
     const uri = getPlaylistURL(getState());
@@ -21854,6 +21867,9 @@ class webampLazy_Winamp {
   }
   setSkinFromClient(data) {
     this.store.dispatch(setSkinFromClient(data));
+  }
+  setEqFromClient(data) {
+    this.store.dispatch(setEqFromClient(data));
   }
   async skinIsLoaded() {
     // Wait for the skin to load.

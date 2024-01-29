@@ -89,6 +89,12 @@ ipcRenderer.invoke('getSkin').then((rs: any) => {
   }
 })
 
+ipcRenderer.invoke('getEq').then((rs: any) => {
+  if (rs) {
+    webamp.setEqFromClient(rs);
+  }
+})
+
 ipcRenderer.invoke('getLikedTracks').then((rs: any) => {
   rs.result.forEach((element: any) => {
     let artist: any[] = [];
