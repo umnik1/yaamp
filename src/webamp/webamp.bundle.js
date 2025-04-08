@@ -3804,7 +3804,7 @@ __webpack_require__.d(__webpack_exports__, "compose", function() { return /* bin
 __webpack_require__.d(__webpack_exports__, "createStore", function() { return /* binding */ redux_createStore; });
 __webpack_require__.d(__webpack_exports__, "legacy_createStore", function() { return /* binding */ legacy_createStore; });
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/typeof.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/typeof.js
 function _typeof(o) {
   "@babel/helpers - typeof";
 
@@ -3814,7 +3814,7 @@ function _typeof(o) {
     return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
   }, _typeof(o);
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/toPrimitive.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/toPrimitive.js
 
 function _toPrimitive(input, hint) {
   if (_typeof(input) !== "object" || input === null) return input;
@@ -3826,14 +3826,14 @@ function _toPrimitive(input, hint) {
   }
   return (hint === "string" ? String : Number)(input);
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/toPropertyKey.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/toPropertyKey.js
 
 
 function _toPropertyKey(arg) {
   var key = _toPrimitive(arg, "string");
   return _typeof(key) === "symbol" ? key : String(key);
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/defineProperty.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/defineProperty.js
 
 function _defineProperty(obj, key, value) {
   key = _toPropertyKey(key);
@@ -3849,7 +3849,7 @@ function _defineProperty(obj, key, value) {
   }
   return obj;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/objectSpread2.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/objectSpread2.js
 
 function ownKeys(e, r) {
   var t = Object.keys(e);
@@ -3872,7 +3872,7 @@ function _objectSpread2(e) {
   }
   return e;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/redux/es/redux.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/redux/es/redux.js
 
 
 /**
@@ -4586,7 +4586,7 @@ __webpack_require__.d(__webpack_exports__, "packArray", function() { return /* b
 __webpack_require__.d(__webpack_exports__, "unpackArray", function() { return /* binding */ unpackArray; });
 __webpack_require__.d(__webpack_exports__, "unpack", function() { return /* binding */ byte_data_unpack; });
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/endianness/endianness.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/endianness/endianness.js
 /*
  * Copyright (c) 2017-2018 Rafael da Silva Rocha.
  *
@@ -4653,7 +4653,7 @@ function swap(bytes, offset, index) {
   }
 }
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/utf8-buffer/index.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/utf8-buffer/index.js
 /*
  * Copyright (c) 2018 Rafael da Silva Rocha.
  *
@@ -4803,7 +4803,7 @@ function pack(str, buffer, index=0) {
   return index;
 }
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/byte-data/lib/int-parser.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/byte-data/lib/int-parser.js
 /*
  * Copyright (c) 2017-2018 Rafael da Silva Rocha.
  *
@@ -4982,7 +4982,7 @@ class IntParser {
   }
 }
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/ieee754-buffer/index.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/ieee754-buffer/index.js
 /*
  * Copyright (c) 2018-2019 Rafael da Silva Rocha.
  * Copyright (c) 2013 DeNA Co., Ltd.
@@ -5226,7 +5226,7 @@ function roundToEven(n) {
   return w % 2 ? w + 1 : w;
 }
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/byte-data/index.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/byte-data/index.js
 /*
  * Copyright (c) 2017-2019 Rafael da Silva Rocha.
  *
@@ -8372,26 +8372,26 @@ exports.AbstractID3Parser = AbstractID3Parser;
 // ESM COMPAT FLAG
 __webpack_require__.r(__webpack_exports__);
 
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/defineProperty.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/defineProperty.js
 var defineProperty = __webpack_require__(2);
 var defineProperty_default = /*#__PURE__*/__webpack_require__.n(defineProperty);
 
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react/index.js
 var react = __webpack_require__(1);
 var react_default = /*#__PURE__*/__webpack_require__.n(react);
 
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-dom/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-dom/index.js
 var react_dom = __webpack_require__(5);
 var react_dom_default = /*#__PURE__*/__webpack_require__.n(react_dom);
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/components/Context.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/components/Context.js
 
 var ReactReduxContext = /*#__PURE__*/react_default.a.createContext(null);
 
 if (false) {}
 
 /* harmony default export */ var components_Context = (ReactReduxContext);
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/batch.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/batch.js
 // Default to a dummy "batch" implementation that just runs the callback
 function defaultNoopBatch(callback) {
   callback();
@@ -8406,7 +8406,7 @@ var setBatch = function setBatch(newBatch) {
 var getBatch = function getBatch() {
   return batch_batch;
 };
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/Subscription.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/Subscription.js
  // encapsulates the subscription logic for connecting a component to the redux store, as
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
@@ -8533,7 +8533,7 @@ function createSubscription(store, parentSub) {
   };
   return subscription;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/useIsomorphicLayoutEffect.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/useIsomorphicLayoutEffect.js
  // React currently throws a warning when using useLayoutEffect on the server.
 // To get around it, we can conditionally useEffect on the server (no-op) and
 // useLayoutEffect in the browser. We need useLayoutEffect to ensure the store
@@ -8544,7 +8544,7 @@ function createSubscription(store, parentSub) {
 // subscription is created and an inconsistent state may be observed
 
 var useIsomorphicLayoutEffect = typeof window !== 'undefined' && typeof window.document !== 'undefined' && typeof window.document.createElement !== 'undefined' ? react["useLayoutEffect"] : react["useEffect"];
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/components/Provider.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/components/Provider.js
 
 
 
@@ -8588,7 +8588,7 @@ function Provider(_ref) {
 if (false) {}
 
 /* harmony default export */ var components_Provider = (Provider);
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/extends.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/extends.js
 function _extends() {
   _extends = Object.assign ? Object.assign.bind() : function (target) {
     for (var i = 1; i < arguments.length; i++) {
@@ -8603,7 +8603,7 @@ function _extends() {
   };
   return _extends.apply(this, arguments);
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js
 function _objectWithoutPropertiesLoose(source, excluded) {
   if (source == null) return {};
   var target = {};
@@ -8616,14 +8616,14 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   }
   return target;
 }
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/hoist-non-react-statics/dist/hoist-non-react-statics.cjs.js
 var hoist_non_react_statics_cjs = __webpack_require__(26);
 var hoist_non_react_statics_cjs_default = /*#__PURE__*/__webpack_require__.n(hoist_non_react_statics_cjs);
 
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/node_modules/react-is/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/node_modules/react-is/index.js
 var react_is = __webpack_require__(35);
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/components/connectAdvanced.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/components/connectAdvanced.js
 
 
 var _excluded = ["getDisplayName", "methodName", "renderCountProp", "shouldHandleStateChanges", "storeKey", "withRef", "forwardRef", "context"],
@@ -8983,7 +8983,7 @@ _ref) {
     return hoist_non_react_statics_cjs_default()(Connect, WrappedComponent);
   };
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/shallowEqual.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/shallowEqual.js
 function is(x, y) {
   if (x === y) {
     return x !== 0 || y !== 0 || 1 / x === 1 / y;
@@ -9011,7 +9011,7 @@ function shallowEqual(objA, objB) {
 
   return true;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/bindActionCreators.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/bindActionCreators.js
 function bindActionCreators(actionCreators, dispatch) {
   var boundActionCreators = {};
 
@@ -9031,7 +9031,7 @@ function bindActionCreators(actionCreators, dispatch) {
 
   return boundActionCreators;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/isPlainObject.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/isPlainObject.js
 /**
  * @param {any} obj The object to inspect.
  * @returns {boolean} True if the argument appears to be a plain object.
@@ -9048,7 +9048,7 @@ function isPlainObject(obj) {
 
   return proto === baseProto;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/warning.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/warning.js
 /**
  * Prints a warning in the console if it exists.
  *
@@ -9073,7 +9073,7 @@ function warning(message) {
   /* eslint-enable no-empty */
 
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/verifyPlainObject.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/verifyPlainObject.js
 
 
 function verifyPlainObject(value, displayName, methodName) {
@@ -9081,7 +9081,7 @@ function verifyPlainObject(value, displayName, methodName) {
     warning(methodName + "() in " + displayName + " must return a plain object. Instead received " + value + ".");
   }
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/wrapMapToProps.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/wrapMapToProps.js
 
 function wrapMapToPropsConstant(getConstant) {
   return function initConstantSelector(dispatch, options) {
@@ -9146,7 +9146,7 @@ function wrapMapToPropsFunc(mapToProps, methodName) {
     return proxy;
   };
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/mapDispatchToProps.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/mapDispatchToProps.js
 
 
 function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
@@ -9165,7 +9165,7 @@ function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
   }) : undefined;
 }
 /* harmony default export */ var connect_mapDispatchToProps = ([whenMapDispatchToPropsIsFunction, whenMapDispatchToPropsIsMissing, whenMapDispatchToPropsIsObject]);
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/mapStateToProps.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/mapStateToProps.js
 
 function whenMapStateToPropsIsFunction(mapStateToProps) {
   return typeof mapStateToProps === 'function' ? wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps') : undefined;
@@ -9176,7 +9176,7 @@ function whenMapStateToPropsIsMissing(mapStateToProps) {
   }) : undefined;
 }
 /* harmony default export */ var connect_mapStateToProps = ([whenMapStateToPropsIsFunction, whenMapStateToPropsIsMissing]);
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/mergeProps.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/mergeProps.js
 
 
 function defaultMergeProps(stateProps, dispatchProps, ownProps) {
@@ -9213,7 +9213,7 @@ function whenMergePropsIsOmitted(mergeProps) {
   } : undefined;
 }
 /* harmony default export */ var connect_mergeProps = ([whenMergePropsIsFunction, whenMergePropsIsOmitted]);
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/verifySubselectors.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/verifySubselectors.js
 
 
 function verify(selector, methodName, displayName) {
@@ -9231,7 +9231,7 @@ function verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, dis
   verify(mapDispatchToProps, 'mapDispatchToProps', displayName);
   verify(mergeProps, 'mergeProps', displayName);
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/selectorFactory.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/selectorFactory.js
 
 var selectorFactory_excluded = ["initMapStateToProps", "initMapDispatchToProps", "initMergeProps"];
 
@@ -9318,7 +9318,7 @@ function finalPropsSelectorFactory(dispatch, _ref2) {
   var selectorFactory = options.pure ? pureFinalPropsSelectorFactory : impureFinalPropsSelectorFactory;
   return selectorFactory(mapStateToProps, mapDispatchToProps, mergeProps, dispatch, options);
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/connect/connect.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/connect/connect.js
 
 
 var connect_excluded = ["pure", "areStatesEqual", "areOwnPropsEqual", "areStatePropsEqual", "areMergedPropsEqual"];
@@ -9418,7 +9418,7 @@ function createConnect(_temp) {
   };
 }
 /* harmony default export */ var connect_connect = (/*#__PURE__*/createConnect());
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/hooks/useReduxContext.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/hooks/useReduxContext.js
 
 
 /**
@@ -9445,7 +9445,7 @@ function useReduxContext_useReduxContext() {
 
   return contextValue;
 }
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/hooks/useStore.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/hooks/useStore.js
 
 
 
@@ -9488,7 +9488,7 @@ function createStoreHook(context) {
  */
 
 var useStore_useStore = /*#__PURE__*/createStoreHook();
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/hooks/useDispatch.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/hooks/useDispatch.js
 
 
 /**
@@ -9532,7 +9532,7 @@ function createDispatchHook(context) {
  */
 
 var useDispatch = /*#__PURE__*/createDispatchHook();
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/hooks/useSelector.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/hooks/useSelector.js
 
 
 
@@ -9679,7 +9679,7 @@ function createSelectorHook(context) {
  */
 
 var useSelector_useSelector = /*#__PURE__*/createSelectorHook();
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/exports.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/exports.js
 
 
 
@@ -9689,10 +9689,10 @@ var useSelector_useSelector = /*#__PURE__*/createSelectorHook();
 
 
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/utils/reactBatchedUpdates.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/utils/reactBatchedUpdates.js
 /* eslint-disable import/no-unresolved */
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react-redux/es/index.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react-redux/es/index.js
 
 
  // Enable batched updates in our subscriptions for use
@@ -9700,10 +9700,10 @@ var useSelector_useSelector = /*#__PURE__*/createSelectorHook();
 
 setBatch(react_dom["unstable_batchedUpdates"]);
 
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/redux/es/redux.js + 5 modules
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/redux/es/redux.js + 5 modules
 var redux = __webpack_require__(14);
 
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/redux-thunk/es/index.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/redux-thunk/es/index.js
 /** A function that accepts a potential "extra argument" value to be injected later,
  * and returns an instance of the thunk middleware that uses that value
  */
@@ -9736,7 +9736,7 @@ var thunk = createThunkMiddleware(); // Attach the factory function so users can
 
 thunk.withExtraArgument = createThunkMiddleware;
 /* harmony default export */ var es = (thunk);
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/redux-devtools-extension/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/redux-devtools-extension/index.js
 var redux_devtools_extension = __webpack_require__(36);
 
 // CONCATENATED MODULE: ./js/actionTypes.ts
@@ -10587,11 +10587,11 @@ function media_getSerializedState(state) {
   };
 }
 /* harmony default export */ var reducers_media = (media_media);
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/@babel/runtime/helpers/objectWithoutProperties.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/@babel/runtime/helpers/objectWithoutProperties.js
 var objectWithoutProperties = __webpack_require__(7);
 var objectWithoutProperties_default = /*#__PURE__*/__webpack_require__.n(objectWithoutProperties);
 
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/reselect/lib/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/reselect/lib/index.js
 var lib = __webpack_require__(3);
 
 // CONCATENATED MODULE: ./js/reducers/display.ts
@@ -10944,7 +10944,7 @@ const settings = (state = defaultSettingsState, action) => {
   }
 };
 /* harmony default export */ var reducers_settings = (settings);
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/invariant/browser.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/invariant/browser.js
 var browser = __webpack_require__(17);
 var browser_default = /*#__PURE__*/__webpack_require__.n(browser);
 
@@ -11326,7 +11326,7 @@ const reducer = Object(redux["combineReducers"])({
   milkdrop: reducers_milkdrop
 });
 /* harmony default export */ var reducers = (reducer);
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/react/jsx-runtime.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/react/jsx-runtime.js
 var jsx_runtime = __webpack_require__(0);
 
 // CONCATENATED MODULE: ./js/playlistHtml.tsx
@@ -12782,7 +12782,7 @@ function toggleEqAuto() {
     });
   };
 }
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/winamp-eqf/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/winamp-eqf/index.js
 var winamp_eqf = __webpack_require__(27);
 
 // CONCATENATED MODULE: ./js/skinSprites.ts
@@ -14636,7 +14636,7 @@ async function skinParser(zipFileBuffer, JSZip) {
   };
 }
 /* harmony default export */ var js_skinParser = (skinParser);
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/tinyqueue/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/tinyqueue/index.js
 var tinyqueue = __webpack_require__(38);
 var tinyqueue_default = /*#__PURE__*/__webpack_require__.n(tinyqueue);
 
@@ -15833,7 +15833,7 @@ const compose = Object(redux_devtools_extension["composeWithDevTools"])({
   const store = initialState ? Object(redux["createStore"])(reducers, initialState, enhancer) : Object(redux["createStore"])(reducers, enhancer);
   return store;
 });
-// CONCATENATED MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/fscreen/dist/fscreen.esm.js
+// CONCATENATED MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/fscreen/dist/fscreen.esm.js
 var fscreen_esm_key = {
     fullscreenEnabled: 0,
     fullscreenElement: 1,
@@ -16095,7 +16095,7 @@ function useActionCreator(actionCreator) {
 function useTypedDispatch() {
   return useDispatch();
 }
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/classnames/index.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/classnames/index.js
 var classnames = __webpack_require__(4);
 var classnames_default = /*#__PURE__*/__webpack_require__.n(classnames);
 
@@ -17703,7 +17703,7 @@ function WindowManager({
     }, w.key))
   });
 }
-// EXTERNAL MODULE: C:/Users/user/Documents/GitHub/yaaamp-base/node_modules/lodash/deburr.js
+// EXTERNAL MODULE: C:/Users/color/Documents/GitHub/yaamp/webamp/node_modules/lodash/deburr.js
 var deburr = __webpack_require__(39);
 var deburr_default = /*#__PURE__*/__webpack_require__.n(deburr);
 
@@ -25277,7 +25277,7 @@ exports = module.exports = __webpack_require__(10)(false);
 
 
 // module
-exports.push([module.i, "#webamp{position:absolute;top:0;left:0}#webamp canvas{-webkit-user-select:none;-moz-user-select:none;user-select:none}#webamp *{box-sizing:content-box;-webkit-box-sizing:content-box}#webamp :focus{outline:0}#webamp input[type=range]{-webkit-appearance:none;margin:0;padding:0;background:none;border:none}#webamp input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;border:none;border-radius:0;background:none}#webamp input[type=range]::-moz-range-thumb{border:none;border-radius:0;background:none}#webamp input[type=range]::-moz-range-track{border:none;background:none}#webamp input[type=range]:focus{outline:none}#webamp input[type=range]::-moz-focus-outer{border:0}#webamp a:focus{outline:none}@keyframes blink{0%{opacity:1}50%{opacity:0}to{opacity:1}}@-webkit-keyframes blink{0%{opacity:1}50%{opacity:0}to{opacity:1}}#webamp .character{display:inline-block;vertical-align:top;width:5px;height:6px;text-indent:-9999px}#webamp .window{position:absolute;image-rendering:-moz-crisp-edges;image-rendering:-o-crisp-edges;image-rendering:-webkit-optimize-contrast;image-rendering:pixelated;-ms-interpolation-mode:nearest-neighbor;-webkit-transform:translateZ(0)}#webamp .window.doubled{-moz-transform:translateZ(0) scale(2);-moz-transform-origin:top left;-webkit-transform:translateZ(0) scale(2);-webkit-transform-origin:top left}", ""]);
+exports.push([module.i, "#webamp{position:absolute;top:0;left:0}#webamp canvas{-webkit-user-select:none;-moz-user-select:none;user-select:none}#webamp *{box-sizing:initial;-webkit-box-sizing:content-box}#webamp :focus{outline:0}#webamp input[type=range]{-webkit-appearance:none;margin:0;padding:0;background:none;border:none}#webamp input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;border:none;border-radius:0;background:none}#webamp input[type=range]::-moz-range-thumb{border:none;border-radius:0;background:none}#webamp input[type=range]::-moz-range-track{border:none;background:none}#webamp input[type=range]:focus{outline:none}#webamp input[type=range]::-moz-focus-outer{border:0}#webamp a:focus{outline:none}@keyframes blink{0%{opacity:1}50%{opacity:0}to{opacity:1}}@-webkit-keyframes blink{0%{opacity:1}50%{opacity:0}to{opacity:1}}#webamp .character{display:inline-block;vertical-align:top;width:5px;height:6px;text-indent:-9999px}#webamp .window{position:absolute;image-rendering:-moz-crisp-edges;image-rendering:-o-crisp-edges;image-rendering:-webkit-optimize-contrast;image-rendering:pixelated;-ms-interpolation-mode:nearest-neighbor;-webkit-transform:translateZ(0)}#webamp .window.doubled{-moz-transform:translateZ(0) scale(2);-moz-transform-origin:top left;-webkit-transform:translateZ(0) scale(2);-webkit-transform-origin:top left}", ""]);
 
 // exports
 

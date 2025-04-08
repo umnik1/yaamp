@@ -6,15 +6,16 @@
 
 ### **Установка**
 
-1. yarn install
-2. В **node_modules/yandex-music-client** перенести папки **"core" и "services"** с заменой.
-3. Поправить в package.json - "copy" на тот, на какой системе вы сейчас работаете, на данный момент настроенно на Windows
+1. `yarn install` и `yarn install` в папке **webamp**
+2. Поправить в **package.json** - "copy" и "deploy-webamp" на тот, на какой системе вы сейчас работаете, на данный момент настроенно на Windows
 
 **Добавление функционала и работа с Webamp**
 
-1. Собираем проект - [https://github.com/umnik1/yaaamp-base](https://github.com/umnik1/yaaamp-base "https://github.com/umnik1/yaaamp-base")
-2. Переносим оттуда файл **webamp.bundle.js** в папку **/src/webamp**
+1. Используйте `yarn deploy-webamp` для сборки Webamp
 
 ### **Общая информация**
 
 **Всё взаимодейстиве между electron и webamp происходит через ipc**
+
+**Based on:** [Webamp](https://github.com/captbaritone/webamp "Webamp"), [yandex-music-api](https://github.com/MarshalX/yandex-music-api "yandex-music-api"), [yandex-music-open-api](https://github.com/acherkashin/yandex-music-open-api "yandex-music-open-api")
+*While the Winamp name, interface and logo are surely property of Nullsoft.*

@@ -19,7 +19,8 @@
     "pack:linux": "electron-builder build -l --x64",
     "pack:mac": "electron-builder build -m --x64",
     "pack": "yarn run pack:win && yarn run pack:linux && yarn run pack:mac",
-    "dist": "yarn run build && build --x64"
+    "dist": "yarn run build && build --x64",
+    "deploy-webamp": "cd webamp && yarn deploy && copy packages\\webamp\\built\\webamp.bundle.js ..\\src\\webamp\\"
   },
   "homepage": "https://yaamp.ru",
   "repository": "https://github.com/umnik1/yaamp",
@@ -39,7 +40,7 @@
     "mime-types": "^2.1.22",
     "parcel": "^2.9.3",
     "utf-8-validate": "^6.0.3",
-    "yandex-music-client": "^0.4.3"
+    "yandex-music-client": "github:umnik1/yandex-music-client"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
@@ -54,8 +55,7 @@
     "spectron": "^13.0.0",
     "ts-jest": "^24.0.0",
     "tslint": "^5.14.0",
-    "typescript": "^3.2.4",
-    "webamp": "^1.5.0"
+    "typescript": "^3.2.4"
   },
   "browserslist": [
     "Chrome 69"

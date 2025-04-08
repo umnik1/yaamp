@@ -1,0 +1,18 @@
+{
+  "name": "webamp-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "deploy": "yarn workspace ani-cursor build && yarn workspace webamp build && yarn workspace webamp build-library"
+  },
+  "devDependencies": {
+    "prettier": "^2.0.5"
+  },
+  "prettier": {},
+  "dependencies": {
+    "terser-webpack-plugin": "^5.3.14",
+    "webpack": "^5.99.2"
+  }
+}
