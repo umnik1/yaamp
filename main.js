@@ -1,8 +1,9 @@
 // TODO: Нужно сделать рефакторинг всего кода, но мне лень с:
 
-const path = require('path')
-const url = require('url')
-const { ipcMain, webContents, session, remote, screen } = require('electron')
+const path = require('path');
+const url = require('url');
+const { ipcMain, webContents, session, remote, screen, TouchBar, nativeImage } = require('electron');
+const { TouchBarLabel, TouchBarButton, TouchBarSpacer } = TouchBar;
 const crypto = require("crypto");
 const DiscordRPC =  require('discord-rpc');
 
@@ -20,7 +21,7 @@ const { YandexMusicClient } = require('yandex-music-client/YandexMusicClient')
 const { getTrackUrl } = require('yandex-music-client/trackUrl')
 
 // раскомментировать для отображения дебаг панели
-// require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
+require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
 
 const tokenPath = app.getPath("userData") + '/token.json';
 const skinPath = app.getPath("userData") + '/skin.json';
@@ -65,6 +66,7 @@ let settingsData = {
 let resetSettings = settingsData;
 let currentBounds;
 
+// Discord
 const sessionId = crypto.randomBytes(20).toString('hex');
 const clientId = '1161295534770892860';
 
@@ -74,9 +76,56 @@ const rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
 rpc.login({ clientId }).catch(console.error);
 
+// Mac Touchbar
+let prev = new TouchBarButton({
+  backgroundColor: '#000000',
+  icon: nativeImage.createFromPath(path.join(__dirname, 'res/icons/touchbar/prev.png')),
+  iconPosition: 'overlay',
+  click: () => {
+    mainWindow.webContents.send('prevTrack');
+  }
+})
+
+let play = new TouchBarButton({
+  backgroundColor: '#000000',
+  icon: nativeImage.createFromPath(path.join(__dirname, 'res/icons/touchbar/play.png')),
+  iconPosition: 'overlay',
+  click: () => {
+    mainWindow.webContents.send('playPause');
+  }
+})
+
+let next = new TouchBarButton({
+  backgroundColor: '#000000',
+  icon: nativeImage.createFromPath(path.join(__dirname, 'res/icons/touchbar/next.png')),
+  iconPosition: 'overlay',
+  click: () => {
+    mainWindow.webContents.send('nextTrack');
+  }
+})
+
+let trackinfo = new TouchBarButton({
+  backgroundColor: '#000000',
+  textColor: '#01E804',
+  label: '',
+  click: () => {
+    mainWindow.webContents.send('nextTrack');
+  }
+})
+
+const touchBar = new TouchBar({
+  items: [
+    prev,
+    play,
+    next,
+    new TouchBarSpacer({ size: 'small' }),
+    trackinfo
+  ]
+})
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+let mainWindow;
 
 function createWindow() {
   electron.protocol.interceptStreamProtocol(
@@ -121,6 +170,7 @@ function createWindow() {
       protocol: 'file:',
       slashes: true
     }))
+    mainWindow.setTouchBar(touchBar)
 
     // and show window once it's ready (to prevent flashing)
     mainWindow.once('ready-to-show', () => {
@@ -875,5 +925,18 @@ getTokenFromFile().then( () => {
       mainWindow.setBounds(currentBounds);
     }
   })
+
+  ipcMain.handle('isPlay', async (event, data) => {
+    if (data) {
+      play.icon = nativeImage.createFromPath(path.join(__dirname, 'res/icons/touchbar/pause.png'));
+    } else {
+      play.icon = nativeImage.createFromPath(path.join(__dirname, 'res/icons/touchbar/play.png'));
+    }
+  })
+
+  ipcMain.handle('nowPlaying', async (event, data) => {
+    trackinfo.label = data;
+  })
+
 
 })

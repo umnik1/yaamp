@@ -45,6 +45,9 @@ webamp.onTrackDidChange((track: any) => {
     } else {
       document.title = DEFAULT_DOCUMENT_TITLE
     }
+
+    ipcRenderer.invoke('nowPlaying', document.title);
+
 })
 
 // Render after the skin has loaded.
@@ -162,4 +165,36 @@ ipcRenderer.on("showMessage", (event:any, data: any) => {
 
   setTimeout(() => document.querySelector(".message").remove(), 1000);
 
+});
+
+ipcRenderer.on("playPause", (event:any) => {
+  // @ts-ignore
+  if (webamp.getMediaStatus() === "PLAYING") {
+    // @ts-ignore
+    webamp.pause();
+    ipcRenderer.invoke('isPlay', 0);
+  } else {
+    // @ts-ignore
+    webamp.play();
+    ipcRenderer.invoke('isPlay', 1);
+  }
+});
+
+setInterval(() => {
+    // @ts-ignore
+  if (webamp.getMediaStatus() === "PLAYING") {
+    ipcRenderer.invoke('isPlay', 0);
+  } else {
+    ipcRenderer.invoke('isPlay', 1);
+  }
+}, 2000);
+
+ipcRenderer.on("prevTrack", (event:any) => {
+  // @ts-ignore
+  webamp.previousTrack();
+});
+
+ipcRenderer.on("nextTrack", (event:any) => {
+  // @ts-ignore
+  webamp.nextTrack();
 });

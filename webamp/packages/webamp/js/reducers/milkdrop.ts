@@ -76,8 +76,6 @@ export const milkdrop = (
       };
     case RESOLVE_PRESET_AT_INDEX:
       const preset = state.presets[action.index];
-      console.log(1232333);
-      console.log(preset);
       return {
         ...state,
         presets: Utils.replaceAtIndex(state.presets, action.index, {

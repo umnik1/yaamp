@@ -3,3 +3,4 @@ node_modules
 .parcel-cache
 skin.json
 token.json
+artifacts

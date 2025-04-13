@@ -105,7 +105,6 @@ export function selectPreset(
   transitionType: TransitionType = TransitionType.DEFAULT
 ): Thunk {
   return (dispatch, getState) => {
-    console.log(123);
     dispatch({ type: SELECT_PRESET_AT_INDEX, index: presetKey, transitionType });
     const state = getState();
     const currentPresetIndex = Selectors.getCurrentPresetIndex(state);
