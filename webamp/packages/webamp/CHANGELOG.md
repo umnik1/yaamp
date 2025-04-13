@@ -55,7 +55,7 @@
 
 ### Bug Fixes:
 
-- Fix issue where `music-metadata-browser` was not imported correctly, and id3 tags could not be read. ([324fc2](https://github.com/captbaritone/webamp/commit/324fc29ca6c94fa54091608323842ba0604e0b4c))
+- Fix issue where `music-metadata` was not imported correctly, and id3 tags could not be read. ([324fc2](https://github.com/captbaritone/webamp/commit/324fc29ca6c94fa54091608323842ba0604e0b4c))
 
 ## 1.3.0
 
@@ -74,7 +74,7 @@ See a full list below:
   - `webamp.nextTrack()`
   - `webamp.seekForward(seconds)`
   - `webamp.seekBackward(seconds)`
-- Our ID3 parsing library [jsmediatags](https://github.com/aadsm/jsmediatags) has been replaced by [music-metadata-browser](https://www.npmjs.com/package/music-metadata-browser). This means we now support a broader range of media types, and also that the bitrate and sample rate displayed are now functional
+- Our ID3 parsing library [jsmediatags](https://github.com/aadsm/jsmediatags) has been replaced by [music-metadata](https://www.npmjs.com/package/music-metadata). This means we now support a broader range of media types, and also that the bitrate and sample rate displayed are now functional
 - The default skin is now included in the Skins section of the options menu by default
 - Implemented the "Options" sub context menu. Click the "O" in the "clutter bar" or select "Options" from the main context menu to see it
 - The equlizer graph is nolonger antialiased. It is now pixelated like real Winamp

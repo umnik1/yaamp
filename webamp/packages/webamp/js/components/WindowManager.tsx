@@ -83,11 +83,15 @@ function useHandleMouseDown(propsWindows: {
         windowPositionDiff[w.key] = SnapUtils.applyDiff(w, finalDiff);
       });
 
+      // Log the updated positions of the windows being moved
+      ipcRenderer.invoke("movingWindowStarted", { windows: windowsInfo }).then(() => {});
       updateWindowPositions(windowPositionDiff, false);
     };
 
     function handleMouseUp() {
       setDraggingState(null);
+      // Log that window movement has ended
+      ipcRenderer.invoke("movingWindowEnded", { windows: windowsInfo }).then(() => {});
     }
 
     window.addEventListener("mouseup", handleMouseUp);
@@ -153,7 +157,7 @@ export default function WindowManager({ windows: propsWindows }: Props) {
     if (document.getElementById('playlist-window')) {
       ipcRenderer.invoke('getSettings').then((rs: any) => {
         const settingsData = JSON.parse(rs);
-
+        console.log(settingsData);
         if (settingsData.windows) {
             ipcRenderer.invoke('movingWindowStarted').then(() => {
                 let obj = windows.find((o, i) => {
@@ -169,6 +173,11 @@ export default function WindowManager({ windows: propsWindows }: Props) {
                   if (o.key === 'equalizer') {
                     windows[i].x = settingsData.windows.equalizerWindow.x;
                     windows[i].y = settingsData.windows.equalizerWindow.y;
+                  }
+                  if (o.key === 'milkdrop') {
+                    windows[i].x = settingsData.windows.milkdropWindow.x;
+                    windows[i].y = settingsData.windows.milkdropWindow.y;
+                    setWindowSize(o.key, settingsData.windows.milkdropWindow.size);
                   }
                 });
                 const newPositions = windowsInfo.reduce(

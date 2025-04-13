@@ -40,6 +40,9 @@ import * as MarqueeUtils from "./marqueeUtils";
 import { generateGraph } from "./resizeUtils";
 import { SerializedStateV1 } from "./serializedStates/v1Types";
 
+// @ts-ignore
+import butterchurnPresets from 'butterchurn-presets';
+
 export const getSliders = (state: AppState) => state.equalizer.sliders;
 
 export const getEqfData = createSelector(getSliders, (sliders) => {
@@ -668,6 +671,10 @@ export function getMilkdropMessage(state: AppState): MilkdropMessage | null {
   return state.milkdrop.message;
 }
 
+export function getMilkdropWindowEnabled(state: AppState): boolean {
+  return state.milkdrop.display === "WINDOW";
+}
+
 export function getMilkdropDesktopEnabled(state: AppState): boolean {
   return state.milkdrop.display === "DESKTOP";
 }
@@ -676,8 +683,12 @@ export function getMilkdropFullscreenEnabled(state: AppState): boolean {
   return state.milkdrop.display === "FULLSCREEN";
 }
 
+export function getMilkdropLockEnabled(state: AppState): boolean {
+  return state.milkdrop.lock;
+}
+
 export function getPresets(state: AppState): any {
-  return state.milkdrop.presets;
+  return butterchurnPresets.getPresets();
 }
 
 export function getButterchurn(state: AppState): any {
@@ -696,11 +707,12 @@ export function getCurrentPreset(state: AppState): any | null {
   if (index == null) {
     return null;
   }
-  const preset = state.milkdrop.presets[index];
-  if (preset == null || preset.type === "UNRESOLVED") {
+  const preset = butterchurnPresets.getPresets()[index];
+
+  if (preset == null) {
     return null;
   }
-  return preset.preset;
+  return preset;
 }
 
 export function getPresetNames(state: AppState): string[] {

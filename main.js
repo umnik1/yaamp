@@ -1,7 +1,9 @@
+// TODO: Нужно сделать рефакторинг всего кода, но мне лень с:
+
 const isDev = require('electron-is-dev')
 const path = require('path')
 const url = require('url')
-const { ipcMain, webContents, session, remote } = require('electron')
+const { ipcMain, webContents, session, remote, screen } = require('electron')
 const crypto = require("crypto");
 const DiscordRPC =  require('discord-rpc');
 
@@ -19,7 +21,7 @@ const { YandexMusicClient } = require('yandex-music-client/YandexMusicClient')
 const { getTrackUrl } = require('yandex-music-client/trackUrl')
 
 if (isDev) {
-  require('electron-debug')({ showDevTools: 'undocked' })
+  require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
 }
 
 const tokenPath = app.getPath("userData") + '/token.json';
@@ -34,7 +36,36 @@ let nowPlaylist = [];
 let yaAuthToken = '';
 let skinData = '';
 let eqData = '';
-let settingsData = {};
+let settingsData = {
+  windows: {
+    mainWindow: {
+      x: 0,
+      y: 12,
+      visible: true,
+    },
+    playlistWindow: {
+      x: 0,
+      y: 244,
+      size: [0, 0],
+      visible: true,
+    },
+    equalizerWindow: {
+      x: 0,
+      y: 128,
+      visible: true,
+    },
+    milkdropWindow: {
+      x: 275,
+      y: 12,
+      size: [7,8],
+      visible: true,
+    }
+  },
+  zoom: 1
+};
+
+let resetSettings = settingsData;
+let currentBounds;
 
 const sessionId = crypto.randomBytes(20).toString('hex');
 const clientId = '1161295534770892860';
@@ -177,7 +208,7 @@ const getSettingsFromFile = async()=>{
     const result = await readFile(settingsPath, 'binary')
     settingsData = JSON.parse(result);
   } catch (error) {
-    fs.writeFile(settingsPath, JSON.stringify({zoom: 1}), (error) => {});  }
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});  }
 }
 
 // This method will be called when Electron has finished
@@ -697,24 +728,59 @@ getTokenFromFile().then( () => {
   })
 
 
+  let locked = false;
+
   // Разблокировка окна для перетаскивания окон
-  ipcMain.handle('movingWindowStarted', async (event) => {
-    const {width, height} = electron.screen.getPrimaryDisplay().workAreaSize
-    mainWindow.webContents.send('unlockWindow');
+  ipcMain.handle('movingWindowStarted', async (event, data) => {
+    if (!locked) {
+      const { width, height } = mainWindow.getBounds();
+      const newWidth = width + 500;
+      const newHeight = height + 500;
 
-    mainWindow.setBounds({
-      x: 0,
-      y: 0,
-      width: width,
-      height: height
-    })
+      mainWindow.webContents.send('unlockWindow');
 
+      mainWindow.setBounds({
+        width: newWidth,
+        height: newHeight
+      })
+
+      locked = true;
+    }
   })
   
   // Блокировка окна для перетаскивания окон
-  ipcMain.handle('movingWindowEnded', async (event) => {
-    mainWindow.webContents.send('lockWindow');
-    mainWindow.center();
+  ipcMain.handle('movingWindowEnded', async (event, data) => {
+  
+    if (data) {
+      const windows = data.windows;
+  
+      windows.forEach(window => {
+        if (window.key == 'main') {
+          settingsData.windows.mainWindow.x = window.x;
+          settingsData.windows.mainWindow.y = window.y;
+        } else if (window.key == 'playlist') {
+          settingsData.windows.playlistWindow.x = window.x;
+          settingsData.windows.playlistWindow.y = window.y;
+        } else if (window.key == 'equalizer') {
+          settingsData.windows.equalizerWindow.x = window.x;
+          settingsData.windows.equalizerWindow.y = window.y;
+        } else if (window.key == 'milkdrop') {
+          settingsData.windows.milkdropWindow.x = window.x;
+          settingsData.windows.milkdropWindow.y = window.y;
+        }
+  
+      });
+    
+      fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {
+        if (error) {
+          console.error('Error writing to settings file:', error);
+        } else {
+          mainWindow.webContents.send('lockWindow');
+        }
+      });
+    }
+  
+    locked = false;
   })
 
   // Блокировка окна для перетаскивания окон без сохраения
@@ -743,25 +809,30 @@ getTokenFromFile().then( () => {
   // Получение настроек
   ipcMain.handle('getSettings', async (event) => {
 
+    if (!settingsData.windows.milkdropWindow) {
+      settingsData.windows.milkdropWindow = {
+        x: 275,
+        y: 12,
+        size: [7,8],
+        visible: true,
+      };
+    }
+    
     return JSON.stringify(settingsData);
   })
-
-
-  ipcMain.on('setWinodwsPositions', async (event, data) => {
-    settingsData.windows = JSON.parse(data);
-
-    console.log(settingsData);
-
-    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});
-  })
-
 
   // Задать размер
   ipcMain.handle('setSize', async (event, data) => {
 
-    settingsData.windows.playlistWindow.size = data.size;
+    if (data.id == 'playlist-resize-target') {
+      settingsData.windows.playlistWindow.size = data.size;
+    } else if (data.id == 'gen-resize-target') {
+      settingsData.windows.milkdropWindow.size = data.size;
+    }
 
-    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {
+      console.log(error);
+    });
   })
 
   // Сохранение EQ
@@ -779,6 +850,32 @@ getTokenFromFile().then( () => {
     });
 
     return eqData;
+  })
+
+  // Сбросить настройки
+  ipcMain.handle('resetSettings', async (event, data) => {
+    fs.writeFile(settingsPath, JSON.stringify(resetSettings), (error) => {
+      console.log(error);
+    });
+    setTimeout(() => {
+      app.relaunch();
+      app.quit();
+    }, 3000)
+  })
+
+  // Milkdrop fullscreen
+  ipcMain.handle('toggle-milkdrop-fullscreen', async (event, status) => {
+    if (status) {
+      currentBounds = mainWindow.getBounds();
+
+      mainWindow.maximize();
+      mainWindow.webContents.send('setFullscreen', status);
+
+    } else {
+      mainWindow.webContents.send('setFullscreen', status);
+      mainWindow.restore();
+      mainWindow.setBounds(currentBounds);
+    }
   })
 
 })

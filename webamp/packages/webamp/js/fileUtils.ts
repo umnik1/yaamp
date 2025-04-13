@@ -1,6 +1,6 @@
 import invariant from "invariant";
 import { IMusicMetadataBrowserApi } from "./types";
-import { IAudioMetadata } from "music-metadata-browser"; // Import music-metadata type definitions
+import { IAudioMetadata } from "music-metadata"; // Import music-metadata type definitions
 import * as Utils from "./utils";
 
 type MediaDataType = string | ArrayBuffer | Blob;

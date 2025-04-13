@@ -43,12 +43,19 @@ function ResizeTarget(props: Props) {
       const newSize: Size = [newWidth, newHeight];
       currentNewSize = newSize;
 
+      ipcRenderer.invoke("movingWindowStarted").then(() => {});
+
       props.setWindowSize(newSize);
     };
 
     window.addEventListener("mousemove", handleMove);
 
-    const handleMouseUp = () => { setMouseDown(false); ipcRenderer.invoke('setSize', {size: currentNewSize}).then((rs: any) => {}); }
+    const handleMouseUp = () => { 
+      setMouseDown(false);
+      ipcRenderer.invoke('setSize', { size: currentNewSize, id: props.id }).then((rs: any) => {
+        ipcRenderer.invoke("movingWindowEnded");
+      });
+    }
     window.addEventListener("mouseup", handleMouseUp);
 
     return () => {

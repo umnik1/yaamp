@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import * as musicMetadataBrowser from "music-metadata-browser";
+import * as musicMetadataBrowser from "music-metadata";
 import WebampLazy from "./webampLazy";
 
 export default class Webamp extends WebampLazy {

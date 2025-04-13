@@ -162,7 +162,7 @@ async function main() {
       import(/* webpackChunkName: "jszip" */ "jszip/dist/jszip"),
     requireMusicMetadata: () =>
       import(
-        /* webpackChunkName: "music-metadata-browser" */ "music-metadata-browser/dist/index"
+        /* webpackChunkName: "music-metadata-browser" */ "music-metadata"
       ),
     __initialWindowLayout,
     __initialState: screenshot ? screenshotInitialState : initialState,

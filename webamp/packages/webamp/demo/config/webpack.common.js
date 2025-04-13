@@ -6,6 +6,9 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 module.exports = {
   resolve: {
     extensions: [".js", ".ts", ".tsx"],
+    fallback: {
+      "stream": require.resolve("stream-browserify")
+    }
   },
   module: {
     rules: [

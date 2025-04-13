@@ -11,6 +11,7 @@ import {
   LOAD_DEFAULT_SKIN,
   SET_MILKDROP_DESKTOP,
   SET_MILKDROP_FULLSCREEN,
+  SET_MILKDROP_LOCK,
   TOGGLE_PRESET_OVERLAY,
   STEP_MARQUEE,
   SET_BAND_FOCUS,
@@ -25,6 +26,8 @@ import {
   hideWindow,
   setFocusedWindow,
 } from "./windows";
+
+const { ipcRenderer } = window.require('electron');
 
 export {
   toggleDoubleSizeMode,
@@ -122,6 +125,7 @@ export {
   requestPresetAtIndex,
   selectRandomPreset,
   selectNextPreset,
+  selectPreset,
   selectPreviousPreset,
   appendPresetFileList,
   handlePresetDrop,
@@ -197,14 +201,30 @@ export function toggleMilkdropDesktop(): Thunk {
   };
 }
 
-export function setMilkdropFullscreen(enabled: boolean): Action {
-  return { type: SET_MILKDROP_FULLSCREEN, enabled };
+export function setMilkdropFullscreen(enabled: boolean): Thunk {
+  return (dispatch, getState) => {
+    dispatch({ type: SET_MILKDROP_FULLSCREEN, enabled });
+    ipcRenderer.invoke('toggle-milkdrop-fullscreen', enabled);
+  };
 }
+
 export function toggleMilkdropFullscreen(): Thunk {
   return (dispatch, getState) => {
-    dispatch(
-      setMilkdropFullscreen(!Selectors.getMilkdropFullscreenEnabled(getState()))
-    );
+    const currentState = Selectors.getMilkdropFullscreenEnabled(getState());
+    dispatch(setMilkdropFullscreen(!currentState));
+  };
+}
+
+export function setMilkdropLock(enabled: boolean): Thunk {
+  return (dispatch, getState) => {
+    dispatch({ type: SET_MILKDROP_LOCK, enabled });
+  };
+}
+
+export function toggleMilkdropLock(): Thunk {
+  return (dispatch, getState) => {
+    const currentState = Selectors.getMilkdropLockEnabled(getState());
+    dispatch(setMilkdropLock(!currentState));
   };
 }
 

@@ -16,7 +16,7 @@ import { NetworkState } from "./reducers/network";
 import { MilkdropState } from "./reducers/milkdrop";
 import { SerializedStateV1 } from "./serializedStates/v1Types";
 import { TracksState } from "./reducers/tracks";
-import { IAudioMetadata, IOptions } from "music-metadata-browser";
+import { IAudioMetadata, IOptions } from "music-metadata";
 import { Store as ReduxStore } from "redux";
 
 // Avoid warnings from Webpack: https://github.com/webpack/webpack/issues/7378
@@ -522,6 +522,10 @@ export type Action =
       type: "SET_MILKDROP_FULLSCREEN";
       enabled: boolean;
     }
+  | {
+      type: "SET_MILKDROP_LOCK";
+      enabled: boolean;
+    }
   | { type: "PRESET_REQUESTED"; index: number; addToHistory: boolean }
   | {
       type: "GOT_BUTTERCHURN_PRESETS";
@@ -537,12 +541,12 @@ export type Action =
   | { type: "TOGGLE_PRESET_CYCLING" }
   | {
       type: "RESOLVE_PRESET_AT_INDEX";
-      index: number;
+      index: number | string | any;
       json: Object;
     }
   | {
       type: "SELECT_PRESET_AT_INDEX";
-      index: number;
+      index: number | string | any;
       transitionType: TransitionType;
     }
   | { type: "TOGGLE_PRESET_OVERLAY" }
@@ -667,8 +671,8 @@ export interface AppState {
 }
 
 /**
- * Type definition of the music-metadata-browser module.
- * Ref: https://github.com/Borewit/music-metadata-browser/blob/master/src/index.ts
+ * Type definition of the music-metadata module.
+ * Ref: https://github.com/Borewit/music-metadata/blob/master/src/index.ts
  */
 export interface IMusicMetadataBrowserApi {
   /**
@@ -738,4 +742,16 @@ export interface Store extends ReduxStore {
 export interface MiddlewareStore {
   dispatch: Dispatch;
   getState: GetState;
+}
+
+export const SELECT_PRESET = "SELECT_PRESET";
+export const NEXT_PRESET = "NEXT_PRESET";
+
+export interface SelectPresetAction {
+  type: typeof SELECT_PRESET;
+  payload: string;
+}
+
+export interface NextPresetAction {
+  type: typeof NEXT_PRESET;
 }

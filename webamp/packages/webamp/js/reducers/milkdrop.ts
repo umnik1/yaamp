@@ -2,6 +2,7 @@ import { Action, StatePreset, TransitionType, MilkdropMessage } from "../types";
 import {
   SET_MILKDROP_DESKTOP,
   SET_MILKDROP_FULLSCREEN,
+  SET_MILKDROP_LOCK,
   GOT_BUTTERCHURN_PRESETS,
   GOT_BUTTERCHURN,
   RESOLVE_PRESET_AT_INDEX,
@@ -17,6 +18,7 @@ import * as Utils from "../utils";
 export interface MilkdropState {
   display: "WINDOW" | "DESKTOP" | "FULLSCREEN";
   overlay: boolean;
+  lock: boolean;
   presetHistory: number[];
   presets: StatePreset[];
   currentPresetIndex: number | null;
@@ -32,6 +34,7 @@ export interface MilkdropState {
 const defaultMilkdropState: MilkdropState = {
   display: "WINDOW",
   overlay: false,
+  lock: false,
   presetHistory: [],
   presets: [],
   currentPresetIndex: null,
@@ -51,6 +54,8 @@ export const milkdrop = (
       return { ...state, display: action.enabled ? "DESKTOP" : "WINDOW" };
     case SET_MILKDROP_FULLSCREEN:
       return { ...state, display: action.enabled ? "FULLSCREEN" : "WINDOW" };
+    case SET_MILKDROP_LOCK:
+        return { ...state, lock: action.enabled };
     case GOT_BUTTERCHURN:
       return { ...state, butterchurn: action.butterchurn };
     case GOT_BUTTERCHURN_PRESETS:
@@ -71,6 +76,8 @@ export const milkdrop = (
       };
     case RESOLVE_PRESET_AT_INDEX:
       const preset = state.presets[action.index];
+      console.log(1232333);
+      console.log(preset);
       return {
         ...state,
         presets: Utils.replaceAtIndex(state.presets, action.index, {

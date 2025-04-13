@@ -57,6 +57,7 @@ export const GenWindow = ({ children, title, windowId, onKeyDown }: Props) => {
   return (
     <FocusTarget windowId={windowId} onKeyDown={onKeyDown}>
       <div
+        id="gen-window"
         className={classnames("gen-window", "window", { selected })}
         style={{ width, height }}
       >

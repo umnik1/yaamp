@@ -1,8 +1,16 @@
+// webamp/packages/webamp/js/components/MilkdropWindow/Visualizer.tsx
 import { useEffect, useState, useRef } from "react";
-import { VISUALIZERS } from "../../constants";
 import * as Selectors from "../../selectors";
 import { TransitionType } from "../../types";
-import { useTypedSelector } from "../../hooks";
+import { useTypedSelector, useActionCreator } from "../../hooks";
+import * as Actions from "../../actionCreators";
+import { VISUALIZERS } from "../../constants";
+import _ from 'lodash';
+
+// @ts-ignore
+import butterchurn from 'butterchurn';
+// @ts-ignore
+import butterchurnPresets from 'butterchurn-presets';
 
 type ButterchurnVisualizer = {
   setRendererSize(width: number, height: number): void;
@@ -26,11 +34,12 @@ const TRANSITION_TYPE_DURATIONS = {
 function Visualizer({ analyser, width, height }: Props) {
   const visualizerStyle = useTypedSelector(Selectors.getVisualizerStyle);
   const playing = useTypedSelector(Selectors.getMediaIsPlaying);
-  const butterchurn = useTypedSelector(Selectors.getButterchurn);
   const trackTitle = useTypedSelector(Selectors.getCurrentTrackDisplayName);
   const currentPreset = useTypedSelector(Selectors.getCurrentPreset);
+  const lock = useTypedSelector(Selectors.getMilkdropLockEnabled);
   const transitionType = useTypedSelector(Selectors.getPresetTransitionType);
   const message = useTypedSelector(Selectors.getMilkdropMessage);
+  const selectPreset = useActionCreator(Actions.selectPreset);
 
   const isEnabledVisualizer = visualizerStyle === VISUALIZERS.MILKDROP;
 
@@ -39,9 +48,13 @@ function Visualizer({ analyser, width, height }: Props) {
     null
   );
 
-  // Initialize the visualizer
+  const lastShownMessage = useRef<number | null>(null);
+  const presets = butterchurnPresets.getPresets();
+  const presetKeys = _.keys(presets);
+
   useEffect(() => {
     if (canvasRef.current == null || butterchurn == null) {
+      console.error("Canvas or Butterchurn is not initialized!");
       return;
     }
     if (visualizer != null) {
@@ -62,7 +75,17 @@ function Visualizer({ analyser, width, height }: Props) {
       }
     );
     _visualizer.connectAudio(analyser);
-    setVisualizer(_visualizer);
+    if (!lock) {
+      const randomPresetKey = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+      const preset = presets[randomPresetKey];
+      _visualizer.loadPreset(preset, 0.3);
+      setVisualizer(_visualizer);
+      selectPreset(randomPresetKey);
+    } else {
+      _visualizer.loadPreset(currentPreset, 0.3);
+      setVisualizer(_visualizer);
+    }
+
   }, [butterchurn, analyser, height, width, visualizer]);
 
   // Ensure render size stays up to date
@@ -76,6 +99,7 @@ function Visualizer({ analyser, width, height }: Props) {
   // Load presets when they change
   const hasLoadedPreset = useRef<boolean>(false);
   useEffect(() => {
+
     if (visualizer == null || currentPreset == null) {
       return;
     }
@@ -95,15 +119,24 @@ function Visualizer({ analyser, width, height }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visualizer, currentPreset]);
 
-  // Handle title animations
+  // Handle title animations and change preset
   useEffect(() => {
     if (visualizer == null || !trackTitle) {
       return;
     }
+
+    if (!lock) {
+      const randomPresetKey = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+      const preset = presets[randomPresetKey];
+      selectPreset(randomPresetKey);
+      visualizer.loadPreset(preset, 0.3);
+    } else {
+      visualizer.loadPreset(currentPreset, 0.3);
+      setVisualizer(visualizer);
+    }
+
     visualizer.launchSongTitleAnim(trackTitle);
   }, [visualizer, trackTitle]);
-
-  const lastShownMessage = useRef<null | number>(null);
 
   useEffect(() => {
     if (visualizer == null || message == null) {
@@ -114,6 +147,9 @@ function Visualizer({ analyser, width, height }: Props) {
       message.time > lastShownMessage.current
     ) {
       lastShownMessage.current = Date.now();
+      const randomPresetKey = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+      const preset = presets[randomPresetKey];
+      visualizer.loadPreset(preset, 0.3);
       visualizer.launchSongTitleAnim(message.text);
     }
   }, [visualizer, message]);

@@ -18,6 +18,8 @@ import {
   Action,
 } from "../types";
 import * as FileUtils from "../fileUtils";
+// @ts-ignore
+import butterchurnPresets from 'butterchurn-presets';
 
 function normalizePresetTypes(preset: Preset): StatePreset {
   const { name } = preset;
@@ -76,36 +78,7 @@ export function loadPresets(presets: StatePreset[]): Thunk {
 
 export function appendPresetFileList(fileList: FileList): Thunk {
   return async (dispatch, getState, { convertPreset }) => {
-    const presets: StatePreset[] = Array.from(fileList)
-      .map((file) => {
-        const JSON_EXT = ".json";
-        const MILK_EXT = ".milk";
-        const filename = file.name.toLowerCase();
-        if (filename.endsWith(MILK_EXT)) {
-          if (convertPreset == null) {
-            throw new Error("Invalid type");
-          }
-          return {
-            type: "UNRESOLVED",
-            name: file.name.slice(0, file.name.length - MILK_EXT.length),
-            getPreset: () => convertPreset(file),
-          } as StatePreset;
-        } else if (filename.endsWith(JSON_EXT)) {
-          return {
-            type: "UNRESOLVED",
-            name: file.name.slice(0, file.name.length - JSON_EXT.length),
-            getPreset: async () => {
-              const str = await FileUtils.genStringFromFileReference(file);
-              // TODO: How should we handle the case where json parsing fails?
-              return JSON.parse(str);
-            },
-          } as StatePreset;
-        }
-        console.error("Invalid type preset when loading directory");
-
-        return null as never;
-      })
-      .filter(Boolean);
+    const presets = butterchurnPresets.getPresets();
     dispatch(loadPresets(presets));
   };
 }
@@ -124,6 +97,19 @@ export function selectNextPreset(
     }
     const nextPresetIndex = currentPresetIndex + 1;
     dispatch(requestPresetAtIndex(nextPresetIndex, transitionType, true));
+  };
+}
+
+export function selectPreset(
+  presetKey: string,
+  transitionType: TransitionType = TransitionType.DEFAULT
+): Thunk {
+  return (dispatch, getState) => {
+    console.log(123);
+    dispatch({ type: SELECT_PRESET_AT_INDEX, index: presetKey, transitionType });
+    const state = getState();
+    const currentPresetIndex = Selectors.getCurrentPresetIndex(state);
+    console.log(currentPresetIndex);
   };
 }
 

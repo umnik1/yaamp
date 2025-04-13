@@ -19,18 +19,10 @@ const OptionsContextMenu = () => {
   return (
     <>
       <Node
-        label="Разблокировать окно"
+        label="Сбросить настройки"
         onClick={
           async () => {
-            ipcRenderer.invoke("movingWindowStarted").then(() => {})
-          }
-         }
-      />
-      <Node
-        label="Заблокировать окно"
-        onClick={
-          async () => {
-            ipcRenderer.invoke("movingWindowEnded").then(() => {})
+            ipcRenderer.invoke("resetSettings").then(() => {})
           }
          }
       />
