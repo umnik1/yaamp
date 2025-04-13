@@ -1,6 +1,5 @@
 // TODO: Нужно сделать рефакторинг всего кода, но мне лень с:
 
-const isDev = require('electron-is-dev')
 const path = require('path')
 const url = require('url')
 const { ipcMain, webContents, session, remote, screen } = require('electron')
@@ -20,9 +19,8 @@ const BrowserWindow = electron.BrowserWindow
 const { YandexMusicClient } = require('yandex-music-client/YandexMusicClient')
 const { getTrackUrl } = require('yandex-music-client/trackUrl')
 
-if (isDev) {
-  require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
-}
+// раскомментировать для отображения дебаг панели
+// require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
 
 const tokenPath = app.getPath("userData") + '/token.json';
 const skinPath = app.getPath("userData") + '/skin.json';
@@ -375,7 +373,7 @@ getTokenFromFile().then( () => {
               smallImageText: 'Yaamp.ru',
               buttons: [
                 {
-                  label: 'Listen this track',
+                  label: 'Listen to this track',
                   url: `https://music.yandex.ru/track/${element.id}`,
                 },
               ],
