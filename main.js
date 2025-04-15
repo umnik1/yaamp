@@ -21,7 +21,7 @@ const { YandexMusicClient } = require('yandex-music-client/YandexMusicClient')
 const { getTrackUrl } = require('yandex-music-client/trackUrl')
 
 // раскомментировать для отображения дебаг панели
-require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
+//require('electron-debug')({ showDevTools:true, devToolsMode: 'undocked' })
 
 const tokenPath = app.getPath("userData") + '/token.json';
 const skinPath = app.getPath("userData") + '/skin.json';
