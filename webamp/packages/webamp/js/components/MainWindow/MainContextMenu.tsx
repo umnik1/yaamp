@@ -34,11 +34,33 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
   const [lendings, setLendings] = useState([]);
   const [data, setData] = useState<any>([]);
   const [userSettings, setUserSettings] = useState<any>([]);
+  const [apiPort, setApiPort] = useState<string>('8080');
 
   const handleChange = (event: { target: { value: SetStateAction<string>; }; }) => {
     ipcRenderer.invoke("search", {searchText: event.target.value}).then((rs: any) => {
       setsearchResult(rs);
     })
+  };
+
+  const handleApiPortChange = (event: { target: { value: SetStateAction<string>; }; }) => {
+    const port = event.target.value.toString();
+    setApiPort(port);
+  };
+
+  const handleApiPortSave = async () => {
+    const port = parseInt(apiPort) || 8080;
+    await ipcRenderer.invoke("setApiSettings", { port: port });
+    ipcRenderer.invoke('getSettings').then((rs: any) => {
+      setUserSettings(JSON.parse(rs));
+    });
+  };
+
+  const handleApiToggle = async () => {
+    const newEnabled = !(userSettings.api?.enabled || false);
+    await ipcRenderer.invoke("setApiSettings", { enabled: newEnabled });
+    ipcRenderer.invoke('getSettings').then((rs: any) => {
+      setUserSettings(JSON.parse(rs));
+    });
   };
 
   useEffect(() => {
@@ -63,7 +85,11 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
         setLendings(rs);
       })
       ipcRenderer.invoke('getSettings').then((rs: any) => {
-        setUserSettings(JSON.parse(rs));
+        const settings = JSON.parse(rs);
+        setUserSettings(settings);
+        if (settings.api?.port) {
+          setApiPort(settings.api.port.toString());
+        }
       })
     }
 
@@ -219,6 +245,33 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
       </Parent>
       <Parent label="Playback">
         <PlaybackContextMenu />
+      </Parent>
+      <Hr />
+      <Parent label="API">
+        <Node 
+          onClick={handleApiToggle}
+          label={userSettings.api?.enabled ? "Выключить API" : "Включить API"}
+          checked={userSettings.api?.enabled || false}
+        />
+        <Hr />
+        <li className="input" id="notClose">
+          <input 
+            className="searchField" 
+            type="number" 
+            id="notClose" 
+            placeholder="Порт (8080)" 
+            value={apiPort}
+            onChange={handleApiPortChange}
+            onBlur={handleApiPortSave}
+            min="1024"
+            max="65535"
+          />
+        </li>
+        <Hr />
+        <Node 
+          onClick={handleApiPortSave}
+          label="Сохранить порт"
+        />
       </Parent>
       <Hr />
       <Node onClick={async () => {

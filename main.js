@@ -9,6 +9,7 @@ const DiscordRPC =  require('discord-rpc');
 
 const checkForUpdatesAndNotify = require('./src/node/updates.js')
 const interceptStreamProtocol = require('./src/node/protocol.js')
+const { createApiServer, stopApiServer } = require('./src/node/api-server.js')
 
 const electron = require('electron')
 const fs = require('fs')
@@ -60,7 +61,11 @@ let settingsData = {
       visible: true,
     }
   },
-  zoom: 1
+  zoom: 1,
+  api: {
+    enabled: false,
+    port: 8080
+  }
 };
 
 let resetSettings = settingsData;
@@ -177,10 +182,15 @@ function createWindow() {
       mainWindow.webContents.setZoomFactor(settingsData.zoom ? settingsData.zoom : 1)
       mainWindow.show()
       checkForUpdatesAndNotify()
+      
+      if (settingsData.api && settingsData.api.enabled) {
+        const port = settingsData.api.port || 8080;
+        createApiServer(port, mainWindow);
+      }
     })
 
     mainWindow.on('closed', function () {
-      // Dereference the window object
+      stopApiServer();
       mainWindow = null
     })
 
@@ -254,7 +264,15 @@ const getEQFromFile = async()=>{
 const getSettingsFromFile = async()=>{
   try {
     const result = await readFile(settingsPath, 'binary')
-    settingsData = JSON.parse(result);
+    const parsed = JSON.parse(result);
+    settingsData = {
+      ...settingsData,
+      ...parsed,
+      api: {
+        enabled: parsed.api?.enabled !== undefined ? parsed.api.enabled : false,
+        port: parsed.api?.port || 8080
+      }
+    };
   } catch (error) {
     fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {});  }
 }
@@ -330,6 +348,8 @@ if (yaAuthToken) {
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
+  // Stop API server when all windows are closed
+  stopApiServer();
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
@@ -342,6 +362,10 @@ app.on('activate', function () {
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     createWindow()
+  } else if (settingsData.api && settingsData.api.enabled && mainWindow && !mainWindow.isDestroyed()) {
+    // Restart API server if it was enabled
+    const port = settingsData.api.port || 8080;
+    createApiServer(port, mainWindow);
   }
 })
 
@@ -865,8 +889,53 @@ getTokenFromFile().then( () => {
         visible: true,
       };
     }
+
+    if (!settingsData.api) {
+      settingsData.api = {
+        enabled: false,
+        port: 8080
+      };
+    }
     
     return JSON.stringify(settingsData);
+  })
+
+  // Настройки API
+  ipcMain.handle('setApiSettings', async (event, data) => {
+    if (!settingsData.api) {
+      settingsData.api = {
+        enabled: false,
+        port: 8080
+      };
+    }
+
+    const wasEnabled = settingsData.api.enabled;
+    const oldPort = settingsData.api.port;
+
+    if (data.enabled !== undefined) {
+      settingsData.api.enabled = data.enabled;
+    }
+    if (data.port !== undefined) {
+      settingsData.api.port = parseInt(data.port) || 8080;
+    }
+
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), (error) => {
+      if (error) {
+        console.error('Error writing to settings file:', error);
+      }
+    });
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      stopApiServer();
+      if (settingsData.api.enabled) {
+        const port = settingsData.api.port || 8080;
+        createApiServer(port, mainWindow);
+      } else if (wasEnabled) {
+        mainWindow.webContents.send('showMessage', 'API сервер остановлен');
+      }
+    }
+
+    return true;
   })
 
   // Задать размер
@@ -936,6 +1005,20 @@ getTokenFromFile().then( () => {
 
   ipcMain.handle('nowPlaying', async (event, data) => {
     trackinfo.label = data;
+  })
+
+  // Управление громкостью
+  ipcMain.handle('setVolume', async (event, volume) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('setVolume', volume);
+    }
+    return true;
+  })
+
+  // Получение текущей громкости (можно расширить позже)
+  ipcMain.handle('getVolume', async (event) => {
+    // По умолчанию возвращаем 50, можно сохранять в настройках
+    return 50;
   })
 
 

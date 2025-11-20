@@ -2956,8 +2956,6 @@ const milkdrop = (state = defaultMilkdropState, action) => {
       });
     case RESOLVE_PRESET_AT_INDEX:
       const preset = state.presets[action.index];
-      console.log(1232333);
-      console.log(preset);
       return milkdrop_objectSpread(milkdrop_objectSpread({}, state), {}, {
         presets: replaceAtIndex(state.presets, action.index, {
           type: "RESOLVED",
@@ -7136,7 +7134,6 @@ function milkdrop_selectNextPreset(transitionType = TransitionType.DEFAULT) {
 }
 function milkdrop_selectPreset(presetKey, transitionType = TransitionType.DEFAULT) {
   return (dispatch, getState) => {
-    console.log(123);
     dispatch({
       type: SELECT_PRESET_AT_INDEX,
       index: presetKey,
@@ -9011,6 +9008,7 @@ const {
 const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
   filePickers
 }) => {
+  var _userSettings$api2, _userSettings$api3;
   const networkConnected = useTypedSelector(getNetworkConnected);
   const genWindows = useTypedSelector(getGenWindows);
   const close = useActionCreator(actionCreators_close);
@@ -9029,11 +9027,37 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
   const [lendings, setLendings] = (0,react.useState)([]);
   const [data, setData] = (0,react.useState)([]);
   const [userSettings, setUserSettings] = (0,react.useState)([]);
+  const [apiPort, setApiPort] = (0,react.useState)('8080');
   const handleChange = event => {
     MainContextMenu_ipcRenderer.invoke("search", {
       searchText: event.target.value
     }).then(rs => {
       setsearchResult(rs);
+    });
+  };
+  const handleApiPortChange = event => {
+    const port = event.target.value.toString();
+    setApiPort(port);
+  };
+  const handleApiPortSave = async () => {
+    const port = parseInt(apiPort) || 8080;
+    await MainContextMenu_ipcRenderer.invoke("setApiSettings", {
+      port: port
+    });
+    // Reload settings to get updated values
+    MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
+      setUserSettings(JSON.parse(rs));
+    });
+  };
+  const handleApiToggle = async () => {
+    var _userSettings$api;
+    const newEnabled = !((_userSettings$api = userSettings.api) !== null && _userSettings$api !== void 0 && _userSettings$api.enabled || false);
+    await MainContextMenu_ipcRenderer.invoke("setApiSettings", {
+      enabled: newEnabled
+    });
+    // Reload settings to get updated values
+    MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
+      setUserSettings(JSON.parse(rs));
     });
   };
   (0,react.useEffect)(() => {
@@ -9058,7 +9082,12 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
         setLendings(rs);
       });
       MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
-        setUserSettings(JSON.parse(rs));
+        var _settings$api;
+        const settings = JSON.parse(rs);
+        setUserSettings(settings);
+        if ((_settings$api = settings.api) !== null && _settings$api !== void 0 && _settings$api.port) {
+          setApiPort(settings.api.port.toString());
+        }
       });
     }
     menuOpened();
@@ -9258,6 +9287,30 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
     }), /*#__PURE__*/(0,jsx_runtime.jsx)(Parent, {
       label: "Playback",
       children: /*#__PURE__*/(0,jsx_runtime.jsx)(components_PlaybackContextMenu, {})
+    }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsxs)(Parent, {
+      label: "API",
+      children: [/*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleApiToggle,
+        label: (_userSettings$api2 = userSettings.api) !== null && _userSettings$api2 !== void 0 && _userSettings$api2.enabled ? "Выключить API" : "Включить API",
+        checked: ((_userSettings$api3 = userSettings.api) === null || _userSettings$api3 === void 0 ? void 0 : _userSettings$api3.enabled) || false
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsx)("li", {
+        className: "input",
+        id: "notClose",
+        children: /*#__PURE__*/(0,jsx_runtime.jsx)("input", {
+          className: "searchField",
+          type: "number",
+          id: "notClose",
+          placeholder: "\u041F\u043E\u0440\u0442 (8080)",
+          value: apiPort,
+          onChange: handleApiPortChange,
+          onBlur: handleApiPortSave,
+          min: "1024",
+          max: "65535"
+        })
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleApiPortSave,
+        label: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u043F\u043E\u0440\u0442"
+      })]
     }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
       onClick: async () => {
         MainContextMenu_ipcRenderer.invoke("openLink", {

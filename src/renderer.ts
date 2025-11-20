@@ -86,6 +86,30 @@ window.centerWindowsInView = function () {
   webamp.centerWindowsInView()
 }
 
+window.webampSetVolume = function (volume: number) {
+  // @ts-ignore
+  if (webamp.store) {
+    // @ts-ignore
+    webamp.store.dispatch({ type: 'SET_VOLUME', volume: Math.max(0, Math.min(100, volume)) });
+  }
+}
+
+window.webampPlayFirstTrack = function () {
+  // @ts-ignore
+  if (webamp.store) {
+    // @ts-ignore
+    const state = webamp.store.getState();
+    // @ts-ignore
+    const trackOrder = state.playlist.trackOrder;
+    if (trackOrder && trackOrder.length > 0) {
+      // @ts-ignore
+      const firstTrackId = trackOrder[0];
+      // @ts-ignore
+      webamp.store.dispatch({ type: 'PLAY_TRACK', id: firstTrackId });
+    }
+  }
+}
+
 ipcRenderer.invoke('getSkin').then((rs: any) => {
   if (rs) {
     webamp.setSkinFromClient(rs);
@@ -169,14 +193,39 @@ ipcRenderer.on("showMessage", (event:any, data: any) => {
 
 ipcRenderer.on("playPause", (event:any) => {
   // @ts-ignore
-  if (webamp.getMediaStatus() === "PLAYING") {
+  const status = webamp.getMediaStatus();
+  // @ts-ignore
+  if (status === "PLAYING") {
     // @ts-ignore
     webamp.pause();
     ipcRenderer.invoke('isPlay', 0);
-  } else {
+  } else if (status === "PAUSED") {
     // @ts-ignore
     webamp.play();
     ipcRenderer.invoke('isPlay', 1);
+  } else if (status === "STOPPED") {
+    // @ts-ignore
+    const state = webamp.store.getState();
+    // @ts-ignore
+    const trackOrder = state.playlist.trackOrder;
+    // @ts-ignore
+    const currentTrack = state.playlist.currentTrack;
+    
+    // Если есть текущий трек, просто запускаем его
+    if (currentTrack !== null && currentTrack !== undefined) {
+      // @ts-ignore
+      webamp.play();
+      ipcRenderer.invoke('isPlay', 1);
+    } 
+    // Если нет текущего трека, но есть треки в плейлисте, запускаем первый
+    else if (trackOrder && trackOrder.length > 0) {
+      // @ts-ignore
+      const firstTrackId = trackOrder[0];
+      // @ts-ignore
+      webamp.store.dispatch({ type: 'PLAY_TRACK', id: firstTrackId });
+      ipcRenderer.invoke('isPlay', 1);
+    }
+    // Если плейлист пуст, ничего не делаем
   }
 });
 
@@ -197,4 +246,8 @@ ipcRenderer.on("prevTrack", (event:any) => {
 ipcRenderer.on("nextTrack", (event:any) => {
   // @ts-ignore
   webamp.nextTrack();
+})
+
+ipcRenderer.on("setVolume", (event:any, volume: number) => {
+  window.webampSetVolume(volume);
 });
