@@ -11,9 +11,9 @@ interface Props {
   onChange(value: number): void;
 }
 
-const MAX_VALUE = 100;
+const MAX_VALUE = 2400; // New range for 0.1 dB precision
 
-// Given a value between 1-100, return the sprite number (0-27)
+// Given a value between 0-2400, return the sprite number (0-27)
 export const spriteNumber = (value: number): number => {
   const percent = value / MAX_VALUE;
   return Math.round(percent * 27);
@@ -43,6 +43,12 @@ export default function Band({ id, onChange, band }: Props) {
   const focusBand = useActionCreator(Actions.focusBand);
   const usetFocus = useActionCreator(Actions.unsetFocus);
 
+  // Round to nearest 0.1 dB step (24 dB / 2400 = 0.01 dB per unit, but we want 0.1 dB steps)
+  // Each 0.1 dB step = 10 units in our 0-2400 range
+  const roundToStep = (val: number): number => {
+    return Math.round(val / 10) * 10;
+  };
+
   // Note: The band background is actually one pixel taller (63) than the slider
   // it contains (62).
   return (
@@ -53,7 +59,10 @@ export default function Band({ id, onChange, band }: Props) {
         handleHeight={11}
         value={1 - value / MAX_VALUE}
         onBeforeChange={() => focusBand(band)}
-        onChange={(val) => onChange((1 - val) * MAX_VALUE)}
+        onChange={(val) => {
+          const newValue = (1 - val) * MAX_VALUE;
+          onChange(roundToStep(newValue));
+        }}
         onAfterChange={usetFocus}
         handle={<Handle />}
       />

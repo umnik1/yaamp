@@ -8,8 +8,8 @@ import {
 } from "../actionTypes";
 import { Band, Thunk, Action } from "../types";
 
-const BAND_SNAP_DISTANCE = 5;
-const BAND_MID_POINT_VALUE = 50;
+const BAND_SNAP_DISTANCE = 50; // 5 in old scale (0-100), now 50 in new scale (0-2400) to maintain same snap distance in dB
+const BAND_MID_POINT_VALUE = 1200; // 50 in old scale (0-100), now 1200 in new scale (0-2400)
 
 function _snapBandValue(value: number): number {
   if (
@@ -18,7 +18,8 @@ function _snapBandValue(value: number): number {
   ) {
     return BAND_MID_POINT_VALUE;
   }
-  return value;
+  // Round to nearest 0.1 dB step (value divisible by 1)
+  return Math.round(value);
 }
 
 export function setEqBand(band: Band, value: number): Action {
@@ -38,11 +39,11 @@ function _setEqTo(value: number): Thunk {
 }
 
 export function setEqToMax(): Thunk {
-  return _setEqTo(100);
+  return _setEqTo(2400);
 }
 
 export function setEqToMid(): Thunk {
-  return _setEqTo(50);
+  return _setEqTo(1200);
 }
 
 export function setEqToMin(): Thunk {

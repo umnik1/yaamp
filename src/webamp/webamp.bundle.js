@@ -1644,11 +1644,21 @@ const percentToRange = (percent, min, max) => min + Math.round(percent * (max - 
 const percentToIndex = (percent, length) => percentToRange(percent, 0, length - 1);
 const rebound = (oldMin, oldMax, newMin, newMax) => oldValue => percentToRange(toPercent(oldMin, oldMax, oldValue), newMin, newMax);
 
-// Convert an .eqf value to a 0-100
-const normalizeEqBand = rebound(1, 64, 0, 100);
+// Convert an .eqf value to a 0-2400 (for 0.1 dB steps: 24 dB / 0.1 = 240 steps, multiplied by 10 for precision)
+const normalizeEqBand = rebound(1, 64, 0, 2400);
 
-// Convert a 0-100 to an .eqf value
-const denormalizeEqBand = rebound(0, 100, 1, 64);
+// Convert a 0-2400 to an .eqf value
+const denormalizeEqBand = rebound(0, 2400, 1, 64);
+
+// Convert 0-2400 normalized value to dB (-12 to +12 dB with 0.1 dB steps)
+const normalizedToDb = value => {
+  return value / 2400 * 24 - 12;
+};
+
+// Convert dB to 0-2400 normalized value
+const dbToNormalized = db => {
+  return Math.round((db + 12) / 24 * 2400);
+};
 
 // Merge a `source` object to a `target` recursively
 // TODO: The typing here is a bit of a disaster.
@@ -2543,19 +2553,38 @@ const equalizer_defaultState = {
   on: true,
   auto: false,
   sliders: {
-    preamp: 50,
-    60: 50,
-    170: 50,
-    310: 50,
-    600: 50,
-    1000: 50,
-    3000: 50,
-    6000: 50,
-    12000: 50,
-    14000: 50,
-    16000: 50
+    preamp: 1200,
+    // 0 dB in new scale (was 50 in old 0-100 scale)
+    60: 1200,
+    170: 1200,
+    310: 1200,
+    600: 1200,
+    1000: 1200,
+    3000: 1200,
+    6000: 1200,
+    12000: 1200,
+    14000: 1200,
+    16000: 1200
   }
 };
+
+// Migrate old slider values from 0-100 range to 0-2400 range
+function migrateSliderValues(sliders) {
+  const migrated = equalizer_objectSpread({}, sliders);
+
+  // Check if values need migration (any value > 2400 indicates old format, or values between 0-100)
+  const needsMigration = Object.values(sliders).some(val => val > 0 && val <= 100 && val !== 0);
+  if (needsMigration) {
+    // Convert old 0-100 range to new 0-2400 range
+    Object.keys(migrated).forEach(key => {
+      const value = migrated[key];
+      if (value >= 0 && value <= 100) {
+        migrated[key] = Math.round(value / 100 * 2400);
+      }
+    });
+  }
+  return migrated;
+}
 const equalizer = (state = equalizer_defaultState, action) => {
   switch (action.type) {
     case SET_BAND_VALUE:
@@ -2578,7 +2607,13 @@ const equalizer = (state = equalizer_defaultState, action) => {
         auto: action.value
       });
     case LOAD_SERIALIZED_STATE:
-      return action.serializedState.equalizer || state;
+      if (action.serializedState.equalizer) {
+        const loadedState = action.serializedState.equalizer;
+        return equalizer_objectSpread(equalizer_objectSpread({}, loadedState), {}, {
+          sliders: migrateSliderValues(loadedState.sliders)
+        });
+      }
+      return state;
     default:
       return state;
   }
@@ -4418,13 +4453,15 @@ function media_toggleTimeMode() {
 ;// CONCATENATED MODULE: ./js/actionCreators/equalizer.ts
 
 
-const BAND_SNAP_DISTANCE = 5;
-const BAND_MID_POINT_VALUE = 50;
+const BAND_SNAP_DISTANCE = 50; // 5 in old scale (0-100), now 50 in new scale (0-2400) to maintain same snap distance in dB
+const BAND_MID_POINT_VALUE = 1200; // 50 in old scale (0-100), now 1200 in new scale (0-2400)
+
 function _snapBandValue(value) {
   if (value < BAND_MID_POINT_VALUE + BAND_SNAP_DISTANCE && value > BAND_MID_POINT_VALUE - BAND_SNAP_DISTANCE) {
     return BAND_MID_POINT_VALUE;
   }
-  return value;
+  // Round to nearest 0.1 dB step (value divisible by 1)
+  return Math.round(value);
 }
 function setEqBand(band, value) {
   return {
@@ -4445,10 +4482,10 @@ function _setEqTo(value) {
   };
 }
 function equalizer_setEqToMax() {
-  return _setEqTo(100);
+  return _setEqTo(2400);
 }
 function equalizer_setEqToMid() {
-  return _setEqTo(50);
+  return _setEqTo(1200);
 }
 function equalizer_setEqToMin() {
   return _setEqTo(0);
@@ -9044,7 +9081,6 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
     await MainContextMenu_ipcRenderer.invoke("setApiSettings", {
       port: port
     });
-    // Reload settings to get updated values
     MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
       setUserSettings(JSON.parse(rs));
     });
@@ -9055,7 +9091,6 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
     await MainContextMenu_ipcRenderer.invoke("setApiSettings", {
       enabled: newEnabled
     });
-    // Reload settings to get updated values
     MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
       setUserSettings(JSON.parse(rs));
     });
@@ -11739,9 +11774,9 @@ function PlaylistWindow_PlaylistWindow({
 
 
 
-const MAX_VALUE = 100;
+const MAX_VALUE = 2400; // New range for 0.1 dB precision
 
-// Given a value between 1-100, return the sprite number (0-27)
+// Given a value between 0-2400, return the sprite number (0-27)
 const spriteNumber = value => {
   const percent = value / MAX_VALUE;
   return Math.round(percent * 27);
@@ -11786,6 +11821,12 @@ function Band({
   const focusBand = useActionCreator(actionCreators_focusBand);
   const usetFocus = useActionCreator(actionCreators_unsetFocus);
 
+  // Round to nearest 0.1 dB step (24 dB / 2400 = 0.01 dB per unit, but we want 0.1 dB steps)
+  // Each 0.1 dB step = 10 units in our 0-2400 range
+  const roundToStep = val => {
+    return Math.round(val / 10) * 10;
+  };
+
   // Note: The band background is actually one pixel taller (63) than the slider
   // it contains (62).
   return /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
@@ -11801,7 +11842,10 @@ function Band({
       handleHeight: 11,
       value: 1 - value / MAX_VALUE,
       onBeforeChange: () => focusBand(band),
-      onChange: val => onChange((1 - val) * MAX_VALUE),
+      onChange: val => {
+        const newValue = (1 - val) * MAX_VALUE;
+        onChange(roundToStep(newValue));
+      },
       onAfterChange: usetFocus,
       handle: /*#__PURE__*/(0,jsx_runtime.jsx)(Band_Handle, {})
     })
@@ -13347,12 +13391,12 @@ class Media {
     this._gainNode.gain.value = volume / 100;
   }
 
-  // from 0 to 100
-  // The input value here is 0-100 which is kinda wrong, since it represents -12db to 12db.
-  // For now, 50 is 0db (no change).
+  // from 0 to 2400
+  // The input value here is 0-2400 which represents -12db to 12db with 0.1 dB steps.
+  // Value 1200 is 0db (no change).
   // Equation used is: 10^((dB)/20) = x, where x (preamp.gain.value) is passed on to gainnode for boosting or attenuation.
   setPreamp(value) {
-    const db = value / 100 * 24 - 12;
+    const db = value / 2400 * 24 - 12;
     this._preamp.gain.value = Math.pow(10, db / 20);
   }
 
@@ -13362,7 +13406,7 @@ class Media {
     this._balance.balance.value = balance / 100;
   }
   setEqBand(band, value) {
-    const db = value / 100 * 24 - 12;
+    const db = value / 2400 * 24 - 12;
     this._bands[band].gain.value = db;
   }
   disableEq() {

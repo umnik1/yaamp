@@ -192,12 +192,12 @@ export default class Media {
     this._gainNode.gain.value = volume / 100;
   }
 
-  // from 0 to 100
-  // The input value here is 0-100 which is kinda wrong, since it represents -12db to 12db.
-  // For now, 50 is 0db (no change).
+  // from 0 to 2400
+  // The input value here is 0-2400 which represents -12db to 12db with 0.1 dB steps.
+  // Value 1200 is 0db (no change).
   // Equation used is: 10^((dB)/20) = x, where x (preamp.gain.value) is passed on to gainnode for boosting or attenuation.
   setPreamp(value: number) {
-    const db = (value / 100) * 24 - 12;
+    const db = (value / 2400) * 24 - 12;
     this._preamp.gain.value = Math.pow(10, db / 20);
   }
 
@@ -208,7 +208,7 @@ export default class Media {
   }
 
   setEqBand(band: Band, value: number) {
-    const db = (value / 100) * 24 - 12;
+    const db = (value / 2400) * 24 - 12;
     this._bands[band].gain.value = db;
   }
 

@@ -167,11 +167,17 @@ const rebound = (
 ) => (oldValue: number): number =>
   percentToRange(toPercent(oldMin, oldMax, oldValue), newMin, newMax);
 
-// Convert an .eqf value to a 0-100
-export const normalizeEqBand = rebound(1, 64, 0, 100);
+export const normalizeEqBand = rebound(1, 64, 0, 2400);
 
-// Convert a 0-100 to an .eqf value
-export const denormalizeEqBand = rebound(0, 100, 1, 64);
+export const denormalizeEqBand = rebound(0, 2400, 1, 64);
+
+export const normalizedToDb = (value: number): number => {
+  return (value / 2400) * 24 - 12;
+};
+
+export const dbToNormalized = (db: number): number => {
+  return Math.round(((db + 12) / 24) * 2400);
+};
 
 // Merge a `source` object to a `target` recursively
 // TODO: The typing here is a bit of a disaster.

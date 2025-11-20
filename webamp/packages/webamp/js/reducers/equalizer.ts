@@ -19,19 +19,36 @@ const defaultState = {
   on: true,
   auto: false,
   sliders: {
-    preamp: 50,
-    60: 50,
-    170: 50,
-    310: 50,
-    600: 50,
-    1000: 50,
-    3000: 50,
-    6000: 50,
-    12000: 50,
-    14000: 50,
-    16000: 50,
+    preamp: 1200,
+    60: 1200,
+    170: 1200,
+    310: 1200,
+    600: 1200,
+    1000: 1200,
+    3000: 1200,
+    6000: 1200,
+    12000: 1200,
+    14000: 1200,
+    16000: 1200,
   },
 };
+
+function migrateSliderValues(sliders: Record<Slider, number>): Record<Slider, number> {
+  const migrated: Record<Slider, number> = { ...sliders };
+  
+  const needsMigration = Object.values(sliders).some(val => val > 0 && val <= 100 && val !== 0);
+  
+  if (needsMigration) {
+    Object.keys(migrated).forEach(key => {
+      const value = migrated[key as Slider];
+      if (value >= 0 && value <= 100) {
+        migrated[key as Slider] = Math.round((value / 100) * 2400);
+      }
+    });
+  }
+  
+  return migrated;
+}
 
 const equalizer = (
   state: EqualizerState = defaultState,
@@ -48,7 +65,14 @@ const equalizer = (
     case SET_EQ_AUTO:
       return { ...state, auto: action.value };
     case LOAD_SERIALIZED_STATE:
-      return action.serializedState.equalizer || state;
+      if (action.serializedState.equalizer) {
+        const loadedState = action.serializedState.equalizer;
+        return {
+          ...loadedState,
+          sliders: migrateSliderValues(loadedState.sliders),
+        };
+      }
+      return state;
     default:
       return state;
   }
