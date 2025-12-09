@@ -1643,19 +1643,11 @@ const toPercent = (min, max, value) => (value - min) / (max - min);
 const percentToRange = (percent, min, max) => min + Math.round(percent * (max - min));
 const percentToIndex = (percent, length) => percentToRange(percent, 0, length - 1);
 const rebound = (oldMin, oldMax, newMin, newMax) => oldValue => percentToRange(toPercent(oldMin, oldMax, oldValue), newMin, newMax);
-
-// Convert an .eqf value to a 0-2400 (for 0.1 dB steps: 24 dB / 0.1 = 240 steps, multiplied by 10 for precision)
 const normalizeEqBand = rebound(1, 64, 0, 2400);
-
-// Convert a 0-2400 to an .eqf value
 const denormalizeEqBand = rebound(0, 2400, 1, 64);
-
-// Convert 0-2400 normalized value to dB (-12 to +12 dB with 0.1 dB steps)
 const normalizedToDb = value => {
   return value / 2400 * 24 - 12;
 };
-
-// Convert dB to 0-2400 normalized value
 const dbToNormalized = db => {
   return Math.round((db + 12) / 24 * 2400);
 };
@@ -2554,7 +2546,6 @@ const equalizer_defaultState = {
   auto: false,
   sliders: {
     preamp: 1200,
-    // 0 dB in new scale (was 50 in old 0-100 scale)
     60: 1200,
     170: 1200,
     310: 1200,
@@ -2567,15 +2558,10 @@ const equalizer_defaultState = {
     16000: 1200
   }
 };
-
-// Migrate old slider values from 0-100 range to 0-2400 range
 function migrateSliderValues(sliders) {
   const migrated = equalizer_objectSpread({}, sliders);
-
-  // Check if values need migration (any value > 2400 indicates old format, or values between 0-100)
   const needsMigration = Object.values(sliders).some(val => val > 0 && val <= 100 && val !== 0);
   if (needsMigration) {
-    // Convert old 0-100 range to new 0-2400 range
     Object.keys(migrated).forEach(key => {
       const value = migrated[key];
       if (value >= 0 && value <= 100) {
