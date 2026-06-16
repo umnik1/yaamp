@@ -65,7 +65,8 @@ let settingsData = {
   api: {
     enabled: false,
     port: 8080
-  }
+  },
+  wheelSeeds: ['user:onyourwave']
 };
 
 let resetSettings = settingsData;
@@ -480,6 +481,55 @@ getTokenFromFile().then( () => {
     });
 
     return userPlaylists;
+  })
+
+  // Получаем волны из колеса
+  const DEFAULT_WHEEL_SEEDS = ['user:onyourwave'];
+
+  const getWheelSeeds = () => settingsData.wheelSeeds || DEFAULT_WHEEL_SEEDS;
+
+  const saveWheelSeeds = (seeds) => {
+    settingsData.wheelSeeds = seeds;
+    fs.writeFile(settingsPath, JSON.stringify(settingsData), () => {});
+  };
+
+  const fetchWheelWaves = async () => {
+    const { waves } = await client.wheel.getNewWheelWaves({
+      context: {
+        type: 'WAVE',
+        data: {
+          seeds: getWheelSeeds(),
+        },
+      },
+      feedbacks: [],
+    });
+
+    return waves;
+  };
+
+  ipcMain.handle('getWheelWaves', async () => fetchWheelWaves());
+
+  ipcMain.handle('resetWheel', async () => {
+    saveWheelSeeds(DEFAULT_WHEEL_SEEDS);
+    return fetchWheelWaves();
+  });
+
+  // Задаём волну из колеса
+  ipcMain.handle('setWave', async (event, data) => {
+    nowPlaylist = [];
+
+    if (data.seeds) {
+      saveWheelSeeds(data.seeds);
+    }
+
+    mainWindow.webContents.send('setLoader');
+
+    const { tracks } = await client.rotor.getRotorSessionTracksBySeed(data, 10);
+
+    mainWindow.webContents.send('setTracks', tracks);
+    mainWindow.webContents.send('hideLoader');
+
+    return true;
   })
 
   // Задаём плейлист

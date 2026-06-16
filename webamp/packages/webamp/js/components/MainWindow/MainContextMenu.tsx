@@ -32,6 +32,7 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
   const [playlistgetted, setPlaylistgetted] = useState(false);
   const [searchResult, setsearchResult] = useState([]);
   const [lendings, setLendings] = useState([]);
+  const [waves, setWaves] = useState([]);
   const [data, setData] = useState<any>([]);
   const [userSettings, setUserSettings] = useState<any>([]);
   const [apiPort, setApiPort] = useState<string>('8080');
@@ -84,6 +85,9 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
       ipcRenderer.invoke('lendings').then((rs: any) => {
         setLendings(rs);
       })
+      ipcRenderer.invoke('getWheelWaves').then((rs: any) => {
+        setWaves(rs);
+      })
       ipcRenderer.invoke('getSettings').then((rs: any) => {
         const settings = JSON.parse(rs);
         setUserSettings(settings);
@@ -128,6 +132,21 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
             <Node onClick={async () => {
               ipcRenderer.invoke("setPlaylist", {uid: result.data.data.uid, kind: result.data.data.kind }).then(() => {})
             }} label={result.data.data.title} />
+          );
+        })}
+      </Parent>
+      <Parent label="Колесо">
+        <Node onClick={async () => {
+          ipcRenderer.invoke("resetWheel").then((rs: any) => {
+            setWaves(rs);
+          });
+        }} label="Сбросить колесо" />
+        <Hr />
+        {waves.map((wave: any) => {
+          return (
+            <Node onClick={async () => {
+              ipcRenderer.invoke("setWave", wave).then(() => {});
+            }} label={wave.name} />
           );
         })}
       </Parent>
