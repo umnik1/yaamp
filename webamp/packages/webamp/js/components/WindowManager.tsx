@@ -14,8 +14,6 @@ const abuts = (a: Box, b: Box) => {
   return wouldMoveTo.x !== undefined || wouldMoveTo.y !== undefined;
 };
 
-let posOnStart = false;
-
 interface Props {
   windows: { [windowId: string]: ReactNode };
 }
@@ -146,64 +144,8 @@ export default function WindowManager({ windows: propsWindows }: Props) {
   const windowsInfo = useTypedSelector(Selectors.getWindowsInfo);
   const setFocusedWindow = useActionCreator(Actions.setFocusedWindow);
   const handleMouseDown = useHandleMouseDown(propsWindows);
-  const updateWindowPositions = useActionCreator(Actions.updateWindowPositions);
-  const centerWindowsInView = useActionCreator(Actions.centerWindowsInView);
-  const setWindowSize = useActionCreator(Actions.setWindowSize);
-  const toggleWindow = useActionCreator(Actions.toggleWindow);
 
   const windows = windowsInfo.filter((w) => propsWindows[w.key]);
-
-  if (!posOnStart) {
-    if (document.getElementById('playlist-window')) {
-      ipcRenderer.invoke('getSettings').then((rs: any) => {
-        const settingsData = JSON.parse(rs);
-        console.log(settingsData);
-        if (settingsData.windows) {
-            ipcRenderer.invoke('movingWindowStarted').then(() => {
-                let obj = windows.find((o, i) => {
-                  if (o.key === 'main') {
-                      windows[i].x = settingsData.windows.mainWindow.x;
-                      windows[i].y = settingsData.windows.mainWindow.y;
-                  }
-                  if (o.key === 'playlist') {
-                    windows[i].x = settingsData.windows.playlistWindow.x;
-                    windows[i].y = settingsData.windows.playlistWindow.y;
-                    setWindowSize(o.key, settingsData.windows.playlistWindow.size);
-                  }
-                  if (o.key === 'equalizer') {
-                    windows[i].x = settingsData.windows.equalizerWindow.x;
-                    windows[i].y = settingsData.windows.equalizerWindow.y;
-                  }
-                  if (o.key === 'milkdrop') {
-                    windows[i].x = settingsData.windows.milkdropWindow.x;
-                    windows[i].y = settingsData.windows.milkdropWindow.y;
-                    setWindowSize(o.key, settingsData.windows.milkdropWindow.size);
-                  }
-                });
-                const newPositions = windowsInfo.reduce(
-                  (pos, w) => ({
-                    ...pos,
-                    [w.key]: { x: w.x, y: w.y },
-                  }),
-                  {}
-                );
-
-                updateWindowPositions(newPositions, false);
-                centerWindowsInView();
-                if (!settingsData.windows.playlistWindow.visible) {
-                  toggleWindow('playlist');
-                }
-                if (!settingsData.windows.equalizerWindow.visible) {
-                  toggleWindow('equalizer');
-                }
-                ipcRenderer.invoke('movingWindowEndedWithoutSave').then(() => {});
-                posOnStart = true;
-              });
-        }
-      })
-    }
-  }
-
 
   const onBlur = useCallback(
     // I give up on trying to type things with `relatedTarget`.

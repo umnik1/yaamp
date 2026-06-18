@@ -22,7 +22,7 @@ function PlaylistShade() {
   const duration = useTypedSelector(Selectors.getDuration);
   const name = useTypedSelector(Selectors.getMinimalMediaText);
 
-  const closeWindow = useActionCreator(Actions.closeWindow);
+  const closeWindow = useActionCreator(Actions.closeWindowAndSave);
   const toggleShade = useActionCreator(Actions.togglePlaylistShadeMode);
   const focusWindow = useActionCreator(Actions.setFocusedWindow);
 

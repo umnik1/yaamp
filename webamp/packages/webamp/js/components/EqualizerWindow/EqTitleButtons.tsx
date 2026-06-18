@@ -8,7 +8,7 @@ export default function EqTitleButtons() {
   const focusedWindow = useTypedSelector(Selectors.getFocusedWindow);
 
   const selected = focusedWindow === WINDOWS.EQUALIZER;
-  const closeWindow = useActionCreator(Actions.closeWindow);
+  const closeWindow = useActionCreator(Actions.closeWindowAndSave);
   const toggleEqualizerShadeMode = useActionCreator(
     Actions.toggleEqualizerShadeMode
   );

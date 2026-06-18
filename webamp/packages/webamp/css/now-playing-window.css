@@ -1,0 +1,117 @@
+#webamp #now-playing-window .gen-top-title-plain {
+  font-family: "Arial", sans-serif;
+  font-size: 8px;
+  font-weight: bold;
+  color: #0f0;
+  line-height: 9px;
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+#webamp #now-playing-window.selected .gen-top-title-plain {
+  color: #fff;
+}
+
+#webamp #now-playing-window .gen-middle-center {
+  background-color: #000;
+}
+
+#webamp .now-playing-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+#webamp .now-playing-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+  background-color: #000;
+}
+
+#webamp .now-playing-cover {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  margin-bottom: 6px;
+  border: 1px solid;
+}
+
+#webamp .now-playing-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+#webamp .now-playing-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+#webamp .now-playing-action-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#webamp .now-playing-action-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+#webamp .now-playing-action-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+#webamp .now-playing-details {
+  width: 100%;
+}
+
+#webamp .now-playing-title {
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+#webamp .now-playing-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+#webamp .now-playing-label {
+  flex-shrink: 0;
+  width: 72px;
+}
+
+#webamp .now-playing-value {
+  flex: 1;
+  word-break: break-word;
+}

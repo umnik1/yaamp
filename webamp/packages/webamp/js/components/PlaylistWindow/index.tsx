@@ -48,7 +48,7 @@ function PlaylistWindow({ analyser }: Props) {
   const playlistWindowPixelSize = getWindowPixelSize(WINDOWS.PLAYLIST);
   const doubled = useTypedSelector(Selectors.getDoubled);
 
-  const close = useActionCreator(Actions.closeWindow);
+  const close = useActionCreator(Actions.closeWindowAndSave);
   const toggleShade = useActionCreator(Actions.togglePlaylistShadeMode);
   const scrollUpFourTracks = useActionCreator(Actions.scrollUpFourTracks);
   const scrollDownFourTracks = useActionCreator(Actions.scrollDownFourTracks);

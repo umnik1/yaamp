@@ -2,11 +2,11 @@ import { memo } from "react";
 import classnames from "classnames";
 
 import * as Selectors from "../../selectors";
-import * as Actions from "../../actionCreators";
 import { useActionCreator, useTypedSelector } from "../../hooks";
+import { toggleWindowAndSave } from "../../yaampPersistence";
 
 function toggleEqualizer() {
-  return Actions.toggleWindow("equalizer");
+  return toggleWindowAndSave("equalizer");
 }
 
 const EqToggleButton = memo(() => {

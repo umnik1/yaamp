@@ -93,6 +93,13 @@
   display: block;
 }
 
+#webamp-context-menu .context-menu li.parent.submenu-left > ul {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: -3px;
+}
+
 .searchField {
   width: 120px;
   height: 20px;

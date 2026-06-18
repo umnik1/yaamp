@@ -89,94 +89,124 @@ function getTranslateXY(element) {
   }
 }
 
+function setTitleBarDragRegion(value) {
+  const titleBar = document.getElementById('title-bar');
+  if (titleBar) {
+    titleBar.style.webkitAppRegion = value;
+  }
+}
+
 ipcRenderer.on('unlockWindow', (event, store) => {
   windowLock = false;
-  document.getElementById('title-bar').style.webkitAppRegion = 'no-drag';
-  setTimeout(() => {
-    // window.centerWindowsInView();
-  }, 100)
-
+  setTitleBarDragRegion('no-drag');
 });
 
 ipcRenderer.on('lockWindow', (event, store) => {
   windowLock = true;
-  document.getElementById('title-bar').style.webkitAppRegion = 'drag';
+  setTitleBarDragRegion('drag');
+  updateElectronWindowBounds();
 });
 
 ipcRenderer.on('lockWindowWithoutSave', (event, store) => {
   windowLock = true;
-  window.centerWindowsInView();
-  document.getElementById('title-bar').style.webkitAppRegion = 'drag';
+  setTitleBarDragRegion('drag');
+  updateElectronWindowBounds();
 });
 
 ipcRenderer.on('setFullscreen', (event, status) => {
   fullscreen = status;
 });
 
-setInterval(() => {
-  if (windowLock) {
-    zoom = zoom ? zoom : 1;
-    const windows = [];
+function updateElectronWindowBounds() {
+  if (fullscreen) return;
 
-    // Helper function to collect window data
-    const addWindowData = (containerId, windowId) => {
-      const containerEl = document.getElementById(containerId);
-      const windowEl = document.getElementById(windowId);
-      if (containerEl && windowEl) {
-        const rect = windowEl.getBoundingClientRect();
-        const translate = getTranslateXY(containerEl);
-        windows.push({
-          x: translate.translateX,
-          y: translate.translateY,
-          width: rect.width,
-          height: rect.height
-        });
-      }
-    };
+  zoom = zoom ? zoom : 1;
+  const windows = [];
 
-    // Collect data for all windows
-    addWindowData('main', 'main-window');
-    addWindowData('playlist', 'playlist-window');
-    addWindowData('equalizer', 'equalizer-window');
-    addWindowData('milkdrop', 'gen-window');
-
-    if (windows.length === 0) return;
-
-    // Calculate min and max extents
-    let minX = Math.min(...windows.map(win => win.x));
-    let maxRight = Math.max(...windows.map(win => win.x + win.width));
-    let minY = Math.min(...windows.map(win => win.y));
-    let maxBottom = Math.max(...windows.map(win => win.y + win.height));
-
-    let totalWidth = maxRight - minX;
-    let totalHeight = maxBottom - minY;
-
-    // Add additional padding if needed (e.g., 12px for height as in original code)
-    totalHeight += 12;
-
-    // Check for context menu
-    const contextMenu = document.getElementById('webamp-context-menu');
-    if (contextMenu) {
-      totalWidth += contextMenu.scrollWidth;
-      const menuDiv = contextMenu.querySelector('div');
-      if (menuDiv) totalHeight += menuDiv.scrollHeight;
-    }
-
-
-
-    // Apply zoom
-    if (zoom) {
-      totalWidth = Math.round(totalWidth * zoom);
-      totalHeight = Math.round(totalHeight * zoom);
-    }
-
-
-    if (totalWidth && totalHeight && !fullscreen) {
-      remote.getCurrentWindow().setBounds({
-        width: totalWidth,
-        height: totalHeight
+  const addWindowData = (containerId, windowId) => {
+    const containerEl = document.getElementById(containerId);
+    const windowEl = document.getElementById(windowId);
+    if (containerEl && windowEl) {
+      const rect = windowEl.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const translate = getTranslateXY(containerEl);
+      windows.push({
+        x: translate.translateX,
+        y: translate.translateY,
+        width: rect.width,
+        height: rect.height,
       });
     }
+  };
 
+  addWindowData('main', 'main-window');
+  addWindowData('playlist', 'playlist-window');
+  addWindowData('equalizer', 'equalizer-window');
+  addWindowData('milkdrop', 'gen-window');
+  addWindowData('nowplaying', 'now-playing-window');
+
+  if (windows.length === 0) return;
+
+  let maxRight = Math.max(...windows.map((win) => win.x + win.width));
+  let minY = Math.min(...windows.map((win) => win.y));
+  let maxBottom = Math.max(...windows.map((win) => win.y + win.height));
+
+  const contextMenu = document.getElementById('webamp-context-menu');
+  if (contextMenu) {
+    const menuEl = contextMenu.querySelector('.context-menu');
+    if (menuEl) {
+      const menuRect = menuEl.getBoundingClientRect();
+      if (menuRect.width > 0 && menuRect.height > 0) {
+        maxRight = Math.max(maxRight, menuRect.right);
+        maxBottom = Math.max(maxBottom, menuRect.bottom);
+      }
+    }
+
+    const viewportWidth = document.documentElement.clientWidth;
+    contextMenu.querySelectorAll(".context-menu li.parent").forEach((parentEl) => {
+      const submenu = parentEl.querySelector(":scope > ul");
+      if (!(submenu instanceof HTMLElement)) return;
+
+      const parentRect = parentEl.getBoundingClientRect();
+      const submenuRect = submenu.getBoundingClientRect();
+      const submenuWidth =
+        submenuRect.width > 0
+          ? submenuRect.width
+          : submenu.scrollWidth;
+
+      if (submenuWidth > 0 && parentRect.right + submenuWidth > viewportWidth + 1) {
+        parentEl.classList.add("submenu-left");
+      } else {
+        parentEl.classList.remove("submenu-left");
+      }
+
+      if (submenuRect.width > 0 && submenuRect.height > 0) {
+        maxRight = Math.max(maxRight, submenuRect.right);
+        maxBottom = Math.max(maxBottom, submenuRect.bottom);
+      }
+    });
   }
-}, 100); // Adjust interval as needed
+
+  let totalWidth = maxRight;
+  let totalHeight = maxBottom - minY + 12;
+
+  if (zoom) {
+    totalWidth = Math.round(totalWidth * zoom);
+    totalHeight = Math.round(totalHeight * zoom);
+  }
+
+  if (totalWidth && totalHeight) {
+    remote.getCurrentWindow().setBounds({
+      width: totalWidth,
+      height: totalHeight,
+    });
+  }
+}
+
+window.updateElectronWindowBounds = updateElectronWindowBounds;
+
+setInterval(() => {
+  if (windowLock) {
+    updateElectronWindowBounds();
+  }
+}, 100);

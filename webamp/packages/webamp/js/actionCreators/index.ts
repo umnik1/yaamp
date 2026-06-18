@@ -30,6 +30,10 @@ import {
 const { ipcRenderer } = window.require('electron');
 
 export {
+  toggleWindowAndSave,
+  closeWindowAndSave,
+} from "../yaampPersistence";
+export {
   toggleDoubleSizeMode,
   toggleEqualizerShadeMode,
   togglePlaylistShadeMode,
@@ -38,6 +42,7 @@ export {
   showWindow,
   setWindowSize,
   toggleWindow,
+  setWindowOpen,
   updateWindowPositions,
   toggleMainWindowShadeMode,
   centerWindowsInContainer,

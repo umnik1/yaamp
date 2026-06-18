@@ -3,6 +3,7 @@ import classnames from "classnames";
 import "../../../css/gen-window.css";
 
 import * as Actions from "../../actionCreators";
+import { closeWindowAndSave } from "../../yaampPersistence";
 import * as Selectors from "../../selectors";
 import ResizeTarget from "../ResizeTarget";
 import { WindowId } from "../../types";
@@ -42,12 +43,15 @@ interface Props {
   children: (windowSize: WindowSize) => React.ReactNode;
   title: string;
   onKeyDown?(e: KeyboardEvent): void;
+  domId?: string;
+  resizeId?: string;
+  plainTitle?: boolean;
 }
 
 // Named export for testing
-export const GenWindow = ({ children, title, windowId, onKeyDown }: Props) => {
+export const GenWindow = ({ children, title, windowId, onKeyDown, domId = "gen-window", resizeId = "gen-resize-target", plainTitle = false }: Props) => {
   const setWindowSize = useActionCreator(Actions.setWindowSize);
-  const closeWindow = useActionCreator(Actions.closeWindow);
+  const closeWindow = useActionCreator(closeWindowAndSave);
   const getWindowPixelSize = useTypedSelector(Selectors.getWindowPixelSize);
   const focusedWindow = useTypedSelector(Selectors.getFocusedWindow);
   const getWindowSize = useTypedSelector(Selectors.getWindowSize);
@@ -57,7 +61,7 @@ export const GenWindow = ({ children, title, windowId, onKeyDown }: Props) => {
   return (
     <FocusTarget windowId={windowId} onKeyDown={onKeyDown}>
       <div
-        id="gen-window"
+        id={domId}
         className={classnames("gen-window", "window", { selected })}
         style={{ width, height }}
       >
@@ -65,8 +69,8 @@ export const GenWindow = ({ children, title, windowId, onKeyDown }: Props) => {
           <div className="gen-top-left draggable" />
           <div className="gen-top-left-fill draggable" />
           <div className="gen-top-left-end draggable" />
-          <div className="gen-top-title draggable">
-            <Text>{title}</Text>
+          <div className={classnames("gen-top-title", "draggable", { "gen-top-title-plain": plainTitle })}>
+            {plainTitle ? title : <Text>{title}</Text>}
           </div>
           <div className="gen-top-right-end draggable" />
           <div className="gen-top-right-fill draggable" />
@@ -93,11 +97,13 @@ export const GenWindow = ({ children, title, windowId, onKeyDown }: Props) => {
         </div>
         <div className="gen-bottom draggable">
           <div className="gen-bottom-left draggable" />
+          <div className="gen-bottom-fill draggable" />
           <div className="gen-bottom-right draggable">
             <ResizeTarget
               currentSize={windowSize}
               setWindowSize={(size) => setWindowSize(windowId, size)}
-              id={"gen-resize-target"}
+              id={resizeId}
+              className="gen-resize-target"
             />
           </div>
         </div>

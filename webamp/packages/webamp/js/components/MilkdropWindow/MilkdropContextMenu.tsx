@@ -18,7 +18,7 @@ const MilkdropContextMenu = (props: Props) => {
   const currentPreset = useTypedSelector(Selectors.getCurrentPreset);
   const currentLock = useTypedSelector(Selectors.getMilkdropLockEnabled);
 
-  const closeWindow = useActionCreator(Actions.closeWindow);
+  const closeWindow = useActionCreator(Actions.closeWindowAndSave);
   const toggleDesktop = useActionCreator(Actions.toggleMilkdropDesktop);
   const toggleFullscreen = useActionCreator(Actions.toggleMilkdropFullscreen);
   const toggleLock = useActionCreator(Actions.toggleMilkdropLock);

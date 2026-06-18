@@ -21,7 +21,7 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
   const close = useActionCreator(Actions.close);
   const openMediaFileDialog = useActionCreator(Actions.openMediaFileDialog);
   const loadMediaFiles = useActionCreator(Actions.loadMediaFiles);
-  const toggleWindow = useActionCreator(Actions.toggleWindow);
+  const toggleWindow = useActionCreator(Actions.toggleWindowAndSave);
   const menuOpened = useActionCreator(() => ({
     type: "MAIN_CONTEXT_MENU_OPENED",
   }));

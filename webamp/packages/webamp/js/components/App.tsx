@@ -18,6 +18,7 @@ import WindowManager from "./WindowManager";
 import MainWindow from "./MainWindow";
 import PlaylistWindow from "./PlaylistWindow";
 import EqualizerWindow from "./EqualizerWindow";
+import NowPlayingWindow from "./NowPlayingWindow";
 import Skin from "./Skin";
 
 import "../../css/webamp.css";
@@ -111,6 +112,8 @@ export default function App({ media, filePickers }: Props) {
           return <PlaylistWindow analyser={media.getAnalyser()} />;
         case WINDOWS.MILKDROP:
           return <MilkdropWindow analyser={media.getAnalyser()} />;
+        case WINDOWS.NOW_PLAYING:
+          return <NowPlayingWindow />;
         default:
           throw new Error(`Tried to render an unknown window: ${id}`);
       }

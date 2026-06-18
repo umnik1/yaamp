@@ -111,6 +111,15 @@ export function toggleWindow(windowId: WindowId): Action {
   return { type: TOGGLE_WINDOW, windowId };
 }
 
+export function setWindowOpen(windowId: WindowId, open: boolean): Thunk {
+  return (dispatch, getState) => {
+    const isOpen = Selectors.getWindowOpen(getState())(windowId);
+    if (isOpen !== open) {
+      dispatch(toggleWindow(windowId));
+    }
+  };
+}
+
 export function updateWindowPositions(
   positions: WindowPositions,
   absolute?: boolean
@@ -208,6 +217,14 @@ export function stackWindows(): Thunk {
 
 export function ensureWindowsAreOnScreen(): Thunk {
   return (dispatch, getState) => {
+    try {
+      if (window.require?.('electron')) {
+        return;
+      }
+    } catch {
+      // Not in Electron.
+    }
+
     const state = getState();
 
     const windowsInfo = Selectors.getWindowsInfo(state);

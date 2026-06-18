@@ -13,7 +13,7 @@ import {
   next,
   previous,
   toggleDoubleSizeMode,
-  toggleWindow,
+  toggleWindowAndSave,
 } from "./actionCreators";
 
 import { TOGGLE_TIME_MODE, TOGGLE_LLAMA_MODE } from "./actionTypes";
@@ -60,13 +60,16 @@ export function bindHotkeys(dispatch: Dispatch): () => void {
     } else if (e.altKey) {
       switch (e.keyCode) {
         case 87: // ALT+W
-          dispatch(toggleWindow("main"));
+          dispatch(toggleWindowAndSave("main"));
           break;
         case 69: // ALT+E
-          dispatch(toggleWindow("playlist"));
+          dispatch(toggleWindowAndSave("playlist"));
           break;
         case 71: // ALT+G
-          dispatch(toggleWindow("equalizer"));
+          dispatch(toggleWindowAndSave("equalizer"));
+          break;
+        case 73: // ALT+I
+          dispatch(toggleWindowAndSave("nowplaying"));
           break;
       }
     } else {

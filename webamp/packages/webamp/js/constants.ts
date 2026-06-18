@@ -24,6 +24,7 @@ export const WINDOWS = {
   PLAYLIST: "playlist",
   EQUALIZER: "equalizer",
   MILKDROP: "milkdrop",
+  NOW_PLAYING: "nowplaying",
 };
 
 export const LOAD_STYLE: Record<LoadStyle, LoadStyle> = {

@@ -2,11 +2,11 @@ import { memo } from "react";
 import classnames from "classnames";
 
 import * as Selectors from "../../selectors";
-import * as Actions from "../../actionCreators";
 import { useTypedSelector, useActionCreator } from "../../hooks";
+import { toggleWindowAndSave } from "../../yaampPersistence";
 
 function togglePlaylist() {
-  return Actions.toggleWindow("playlist");
+  return toggleWindowAndSave("playlist");
 }
 
 const PlaylistToggleButton = memo(() => {

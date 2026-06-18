@@ -1,5 +1,11 @@
-import { ReactNode, useState, useEffect, useCallback } from "react";
+import { ReactNode, useState, useEffect, useLayoutEffect, useCallback } from "react";
 import ContextMenu from "./ContextMenu";
+
+declare global {
+  interface Window {
+    updateElectronWindowBounds?: () => void;
+  }
+}
 
 interface Props {
   renderContents(): ReactNode;
@@ -23,8 +29,15 @@ export default function ContextMenuWraper({
     y: number;
   } | null>(null);
 
+  const [menuPosition, setMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   const closeMenu = useCallback(() => {
     setOpenPosition(null);
+    setMenuPosition(null);
+    window.updateElectronWindowBounds?.();
   }, []);
 
   const handleGlobalClick = useCallback(
@@ -41,24 +54,79 @@ export default function ContextMenuWraper({
   const handleRightClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const { pageX, pageY } = e;
-      // TODO: We could do an initial render to see if the menu fits here
-      // and do a second render if it does not.
       setOpenPosition({ x: pageX, y: pageY });
+      setMenuPosition({ x: pageX, y: pageY });
       e.preventDefault();
       e.stopPropagation();
     },
     []
   );
 
+  useLayoutEffect(() => {
+    if (openPosition == null) {
+      return;
+    }
+
+    const adjustMenu = () => {
+      const menuEl = document.querySelector(
+        "#webamp-context-menu .context-menu"
+      );
+      if (!menuEl) {
+        return;
+      }
+
+      window.updateElectronWindowBounds?.();
+
+      const menuRect = menuEl.getBoundingClientRect();
+      const viewportHeight = document.documentElement.clientHeight;
+      const viewportWidth = document.documentElement.clientWidth;
+      const { x: clickX, y: clickY } = openPosition;
+      const nextX =
+        menuRect.width > 0 && clickX + menuRect.width > viewportWidth + 1
+          ? Math.max(0, clickX - menuRect.width)
+          : clickX;
+      const nextY =
+        menuRect.height > 0 && clickY + menuRect.height > viewportHeight + 1
+          ? Math.max(0, clickY - menuRect.height)
+          : clickY;
+
+      setMenuPosition((prev) => {
+        if (prev?.x === nextX && prev?.y === nextY) {
+          return prev;
+        }
+        return { x: nextX, y: nextY };
+      });
+
+      if (nextX !== clickX || nextY !== clickY) {
+        window.updateElectronWindowBounds?.();
+      }
+    };
+
+    adjustMenu();
+    requestAnimationFrame(() => {
+      adjustMenu();
+      requestAnimationFrame(adjustMenu);
+    });
+  }, [openPosition]);
+
   // Add click-away listeners when window is open
   useEffect(() => {
     if (openPosition == null) {
       return;
     }
+
+    const handleMenuHover = () => {
+      window.updateElectronWindowBounds?.();
+    };
+
+    const menuRoot = document.getElementById("webamp-context-menu");
+    menuRoot?.addEventListener("mouseover", handleMenuHover);
+
     document.addEventListener("click", handleGlobalClick);
     document.body.addEventListener("contextmenu", closeMenu);
 
     return () => {
+      menuRoot?.removeEventListener("mouseover", handleMenuHover);
       document.removeEventListener("click", handleGlobalClick);
       document.body.removeEventListener("contextmenu", closeMenu);
     };
@@ -72,8 +140,8 @@ export default function ContextMenuWraper({
     >
       <ContextMenu
         selected={openPosition != null}
-        offsetTop={openPosition?.y ?? 0}
-        offsetLeft={openPosition?.x ?? 0}
+        offsetTop={menuPosition?.y ?? openPosition?.y ?? 0}
+        offsetLeft={menuPosition?.x ?? openPosition?.x ?? 0}
       >
         {renderContents()}
       </ContextMenu>

@@ -105,26 +105,40 @@
 #webamp .gen-bottom {
   height: 14px;
   background-repeat: repeat-x;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  flex-shrink: 0;
 }
 
 #webamp .gen-bottom-left {
-  position: absolute;
-  left: 0;
+  position: relative;
+  left: auto;
+  flex-shrink: 0;
   width: 125px;
   height: 14px;
+}
+
+#webamp .gen-bottom-fill {
+  flex: 1;
+  height: 14px;
+  min-width: 0;
+  background-repeat: repeat-x;
 }
 
 #webamp .gen-bottom-right {
-  position: absolute;
-  right: 0;
+  position: relative;
+  right: auto;
+  flex-shrink: 0;
   width: 125px;
   height: 14px;
 }
 
-#webamp .gen-bottom-right #gen-resize-target {
+#webamp .gen-bottom-right .gen-resize-target {
   position: absolute;
   right: 0;
   bottom: 0;
   height: 20px;
   width: 20px;
+  cursor: nwse-resize;
 }
