@@ -117,6 +117,22 @@ ipcRenderer.on('setFullscreen', (event, status) => {
   fullscreen = status;
 });
 
+// Доступная для контекстного меню область экрана в пикселях страницы.
+function getContextMenuArea() {
+  const win = remote.getCurrentWindow();
+  const bounds = win.getBounds();
+  const { workArea } = remote.screen.getDisplayMatching(bounds);
+  const scale = zoom || 1;
+  return {
+    left: Math.max(0, (workArea.x - bounds.x) / scale),
+    top: Math.max(0, (workArea.y - bounds.y) / scale),
+    right: (workArea.x + workArea.width - bounds.x) / scale,
+    bottom: (workArea.y + workArea.height - bounds.y) / scale,
+  };
+}
+
+window.getContextMenuArea = getContextMenuArea;
+
 function updateElectronWindowBounds() {
   if (fullscreen) return;
 
@@ -162,24 +178,34 @@ function updateElectronWindowBounds() {
       }
     }
 
-    const viewportWidth = document.documentElement.clientWidth;
+    const area = getContextMenuArea();
     contextMenu.querySelectorAll(".context-menu li.parent").forEach((parentEl) => {
       const submenu = parentEl.querySelector(":scope > ul");
       if (!(submenu instanceof HTMLElement)) return;
 
       const parentRect = parentEl.getBoundingClientRect();
-      const submenuRect = submenu.getBoundingClientRect();
-      const submenuWidth =
-        submenuRect.width > 0
-          ? submenuRect.width
-          : submenu.scrollWidth;
+      let submenuRect = submenu.getBoundingClientRect();
+      if (submenuRect.width <= 0 || submenuRect.height <= 0) return;
 
-      if (submenuWidth > 0 && parentRect.right + submenuWidth > viewportWidth + 1) {
-        parentEl.classList.add("submenu-left");
-      } else {
-        parentEl.classList.remove("submenu-left");
+      // Влево — только если справа не помещается, а слева помещается.
+      const fitsRight = parentRect.right + submenuRect.width <= area.right + 1;
+      const fitsLeft = parentRect.left - submenuRect.width >= area.left;
+      parentEl.classList.toggle("submenu-left", !fitsRight && fitsLeft);
+
+      // Сдвиг вверх, чтобы подменю не уходило за нижний край экрана.
+      if (submenu.dataset.naturalTop === undefined) {
+        submenu.style.top = "";
+        submenuRect = submenu.getBoundingClientRect();
+        submenu.dataset.naturalTop = String(submenuRect.top - parentRect.top);
       }
+      const naturalTop = Number(submenu.dataset.naturalTop);
+      const top = Math.max(
+        area.top - parentRect.top,
+        Math.min(naturalTop, area.bottom - submenuRect.height - parentRect.top)
+      );
+      submenu.style.top = `${top}px`;
 
+      submenuRect = submenu.getBoundingClientRect();
       if (submenuRect.width > 0 && submenuRect.height > 0) {
         maxRight = Math.max(maxRight, submenuRect.right);
         maxBottom = Math.max(maxBottom, submenuRect.bottom);

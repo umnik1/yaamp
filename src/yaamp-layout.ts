@@ -28,6 +28,14 @@ const WINDOW_MAP: [keyof SavedWindows, string][] = [
   ['nowPlayingWindow', 'nowplaying'],
 ];
 
+const VISIBILITY_DEFAULTS = [
+  ['main', 'mainWindow', true],
+  ['playlist', 'playlistWindow', true],
+  ['equalizer', 'equalizerWindow', true],
+  ['milkdrop', 'milkdropWindow', true],
+  ['nowplaying', 'nowPlayingWindow', false],
+] as const;
+
 const RESIZABLE_WINDOWS = new Set(['playlist', 'milkdrop', 'nowplaying']);
 
 export const DEFAULT_WINDOW_LAYOUT: WindowLayout = {
@@ -66,10 +74,54 @@ export function buildInitialWindowLayout(windows?: SavedWindows): WindowLayout {
       windowId,
       win.size ?? layout[windowId]?.size ?? undefined
     );
-    layout[windowId].position = { x: win.x ?? 0, y: win.y ?? 0 };
+    layout[windowId].position = {
+      x: toFiniteNumber(win.x, 0),
+      y: toFiniteNumber(win.y, 0),
+    };
+  }
+
+  const defaultVisibility = Object.fromEntries(
+    VISIBILITY_DEFAULTS.map(([windowId, settingsKey, defaultVisible]) => [
+      windowId,
+      getSavedWindowVisibility(windows, settingsKey, defaultVisible),
+    ])
+  );
+  const { positions } = normalizeWindowPositions(
+    Object.fromEntries(Object.entries(layout).map(([windowId, win]) => [windowId, win.position])),
+    (windowId) => !!defaultVisibility[windowId]
+  );
+  for (const [windowId, position] of Object.entries(positions)) {
+    layout[windowId] = { ...layout[windowId], position };
   }
 
   return layout;
+}
+
+type Point = { x: number; y: number };
+
+function toFiniteNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+// Убирает отрицательные координаты окон: видимые сдвигаются вместе, скрытые
+// прижимаются к нулю. Возвращает сдвиг видимых окон.
+export function normalizeWindowPositions(
+  positions: Record<string, Point>,
+  isOpen: (windowId: string) => boolean
+): { positions: Record<string, Point>; shift: Point } {
+  const visible = Object.entries(positions).filter(([windowId]) => isOpen(windowId));
+  const minX = Math.min(0, ...visible.map(([, p]) => p.x));
+  const minY = Math.min(0, ...visible.map(([, p]) => p.y));
+  const shift = { x: -minX, y: -minY };
+
+  const normalized: Record<string, Point> = {};
+  for (const [windowId, p] of Object.entries(positions)) {
+    normalized[windowId] = isOpen(windowId)
+      ? { x: p.x + shift.x, y: p.y + shift.y }
+      : { x: Math.max(0, p.x), y: Math.max(0, p.y) };
+  }
+
+  return { positions: normalized, shift };
 }
 
 export function getSavedWindowVisibility(
@@ -102,15 +154,7 @@ export function applySavedWindows(store: any, windows?: SavedWindows) {
     absolute: false,
   });
 
-  const visibility = [
-    ['main', 'mainWindow', true],
-    ['playlist', 'playlistWindow', true],
-    ['equalizer', 'equalizerWindow', true],
-    ['milkdrop', 'milkdropWindow', true],
-    ['nowplaying', 'nowPlayingWindow', false],
-  ] as const;
-
-  for (const [windowId, settingsKey, defaultVisible] of visibility) {
+  for (const [windowId, settingsKey, defaultVisible] of VISIBILITY_DEFAULTS) {
     const shouldBeOpen = getSavedWindowVisibility(windows, settingsKey, defaultVisible);
     const isOpen = store.getState().windows.genWindows[windowId]?.open;
     if (isOpen !== shouldBeOpen) {

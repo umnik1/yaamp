@@ -45,6 +45,8 @@ function createWindow() {
       show: false,
       resizable: false,
       fullscreenable: false,
+      // macOS: клик по неактивному окну сразу срабатывает, а не только активирует его.
+      acceptFirstMouse: true,
       icon: path.join(__dirname, 'res/icon.png'),
       webPreferences: {
         nodeIntegration: true,

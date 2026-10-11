@@ -4,6 +4,7 @@ import Webamp from './webamp/webamp.bundle.js'
 import {
   DEFAULT_WINDOW_LAYOUT,
   applySavedWindows,
+  normalizeWindowPositions,
 } from './yaamp-layout';
 
 const { ipcRenderer } = window.require('electron');
@@ -66,6 +67,27 @@ async function restoreSavedLayout() {
     console.error('Failed to restore window layout', error);
   }
 }
+
+// После перетаскивания возвращает окна из-за верхнего/левого края и сохраняет
+// текущие позиции окон.
+ipcRenderer.on('lockWindow', () => {
+  const genWindows = webamp.store.getState().windows.genWindows;
+  const { positions, shift } = normalizeWindowPositions(
+    Object.fromEntries(
+      Object.entries(genWindows).map(([windowId, w]: [string, any]) => [windowId, w.position])
+    ),
+    (windowId) => !!genWindows[windowId]?.open
+  );
+
+  if (shift.x || shift.y) {
+    webamp.store.dispatch({ type: 'UPDATE_WINDOW_POSITIONS', positions, absolute: false });
+    ipcRenderer.invoke('moveWindowBy', { dx: -shift.x, dy: -shift.y });
+  }
+
+  for (const [windowId, position] of Object.entries(positions)) {
+    ipcRenderer.invoke('saveWindowState', { windowId, x: position.x, y: position.y });
+  }
+});
 
 webamp.renderWhenReady(document.getElementById('app')).then(() => {
   window.webampRendered();

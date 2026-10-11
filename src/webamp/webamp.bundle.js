@@ -38403,6 +38403,16 @@ function ContextMenuWrapper_objectSpread(e) { for (var r = 1; r < arguments.leng
 
 // TODO: Consider using nested contexts to ensure we don't ever have multiple
 // non-nested context menus open at a time.
+// Позиция меню по одной оси в пределах [min, max].
+function placeMenu(click, size, min, max) {
+  if (size <= 0 || click + size <= max + 1) {
+    return click;
+  }
+  if (click - size >= min) {
+    return click - size;
+  }
+  return Math.max(min, max - size);
+}
 function ContextMenuWraper(_ref) {
   var _ref2, _menuPosition$y, _ref3, _menuPosition$x;
   let {
@@ -38453,14 +38463,18 @@ function ContextMenuWraper(_ref) {
       }
       (_window$updateElectro2 = (_window2 = window).updateElectronWindowBounds) === null || _window$updateElectro2 === void 0 ? void 0 : _window$updateElectro2.call(_window2);
       const menuRect = menuEl.getBoundingClientRect();
-      const viewportHeight = document.documentElement.clientHeight;
-      const viewportWidth = document.documentElement.clientWidth;
+      const area = window.getContextMenuArea ? window.getContextMenuArea() : {
+        left: 0,
+        top: 0,
+        right: document.documentElement.clientWidth,
+        bottom: document.documentElement.clientHeight
+      };
       const {
         x: clickX,
         y: clickY
       } = openPosition;
-      const nextX = menuRect.width > 0 && clickX + menuRect.width > viewportWidth + 1 ? Math.max(0, clickX - menuRect.width) : clickX;
-      const nextY = menuRect.height > 0 && clickY + menuRect.height > viewportHeight + 1 ? Math.max(0, clickY - menuRect.height) : clickY;
+      const nextX = placeMenu(clickX, menuRect.width, area.left, area.right);
+      const nextY = placeMenu(clickY, menuRect.height, area.top, area.bottom);
       setMenuPosition(prev => {
         if ((prev === null || prev === void 0 ? void 0 : prev.x) === nextX && (prev === null || prev === void 0 ? void 0 : prev.y) === nextY) {
           return prev;

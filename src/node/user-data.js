@@ -72,8 +72,19 @@ const getSettingsFromFile = async () => {
   }
 };
 
+// Атомарная запись настроек через временный файл.
 const saveSettings = (callback) => {
-  fs.writeFile(settingsPath, JSON.stringify(settingsData), callback || (() => {}));
+  let error = null;
+  try {
+    const tmpPath = `${settingsPath}.tmp`;
+    fs.writeFileSync(tmpPath, JSON.stringify(settingsData));
+    fs.renameSync(tmpPath, settingsPath);
+  } catch (e) {
+    error = e;
+  }
+  if (callback) {
+    setImmediate(callback, error);
+  }
 };
 
 module.exports = {

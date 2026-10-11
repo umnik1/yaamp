@@ -4,7 +4,22 @@ import ContextMenu from "./ContextMenu";
 declare global {
   interface Window {
     updateElectronWindowBounds?: () => void;
+    getContextMenuArea?: () => MenuArea;
   }
+}
+
+// Доступная для меню область в пикселях страницы.
+type MenuArea = { left: number; top: number; right: number; bottom: number };
+
+// Позиция меню по одной оси в пределах [min, max].
+function placeMenu(click: number, size: number, min: number, max: number) {
+  if (size <= 0 || click + size <= max + 1) {
+    return click;
+  }
+  if (click - size >= min) {
+    return click - size;
+  }
+  return Math.max(min, max - size);
 }
 
 interface Props {
@@ -78,17 +93,15 @@ export default function ContextMenuWraper({
       window.updateElectronWindowBounds?.();
 
       const menuRect = menuEl.getBoundingClientRect();
-      const viewportHeight = document.documentElement.clientHeight;
-      const viewportWidth = document.documentElement.clientWidth;
+      const area = window.getContextMenuArea?.() ?? {
+        left: 0,
+        top: 0,
+        right: document.documentElement.clientWidth,
+        bottom: document.documentElement.clientHeight,
+      };
       const { x: clickX, y: clickY } = openPosition;
-      const nextX =
-        menuRect.width > 0 && clickX + menuRect.width > viewportWidth + 1
-          ? Math.max(0, clickX - menuRect.width)
-          : clickX;
-      const nextY =
-        menuRect.height > 0 && clickY + menuRect.height > viewportHeight + 1
-          ? Math.max(0, clickY - menuRect.height)
-          : clickY;
+      const nextX = placeMenu(clickX, menuRect.width, area.left, area.right);
+      const nextY = placeMenu(clickY, menuRect.height, area.top, area.bottom);
 
       setMenuPosition((prev) => {
         if (prev?.x === nextX && prev?.y === nextY) {

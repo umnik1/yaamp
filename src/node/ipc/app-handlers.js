@@ -55,6 +55,16 @@ function registerAppHandlers() {
     }
   });
 
+  // Сдвигает окно на dx/dy (в CSS-пикселях страницы).
+  ipcMain.handle('moveWindowBy', async (event, data) => {
+    const win = mainWindow.get();
+    if (!win) return;
+
+    const zoom = userData.settingsData.zoom || 1;
+    const [x, y] = win.getPosition();
+    win.setPosition(Math.round(x + data.dx * zoom), Math.round(y + data.dy * zoom));
+  });
+
   ipcMain.handle('saveWindowState', async (event, data) => {
     const { settingsData } = userData;
     const windowKeys = {
@@ -126,6 +136,7 @@ function registerAppHandlers() {
 
   ipcMain.handle('movingWindowEndedWithoutSave', async () => {
     sendToRenderer('lockWindowWithoutSave');
+    locked = false;
   });
 
   ipcMain.handle('setRatio', async (event, data) => {
