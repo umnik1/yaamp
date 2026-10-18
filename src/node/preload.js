@@ -1,4 +1,4 @@
-const { remote } = require('electron')
+const { remote, webFrame } = require('electron')
 const { ipcRenderer } = window.require('electron');
 
 // const handleTransparency = require('./transparency.js')
@@ -6,8 +6,10 @@ const handleThumbnail = require('./thumbnail.js')
 const handleThumbar = require('./thumbar.js')
 
 let windowLock = true;
-let zoom = 1;
 let fullscreen = false;
+// Последний размер, выставленный окну; сбрасывается, когда размер окна
+// меняется в обход updateElectronWindowBounds.
+let lastBounds = null;
 
 // We want to completely disable the eval() for security reasons
 // ESLint will warn about any use of eval(), even this one
@@ -51,11 +53,6 @@ window.webampRendered = function () {
         window.webampNext,
     )
 
-    ipcRenderer.invoke('getSettings').then((rs) => {
-      const settingsData = JSON.parse(rs);
-      zoom = settingsData.zoom;
-    })
-
 }
 
 window.webampOnTrackDidChange = function(track) {
@@ -98,6 +95,7 @@ function setTitleBarDragRegion(value) {
 
 ipcRenderer.on('unlockWindow', (event, store) => {
   windowLock = false;
+  lastBounds = null;
   setTitleBarDragRegion('no-drag');
 });
 
@@ -115,14 +113,21 @@ ipcRenderer.on('lockWindowWithoutSave', (event, store) => {
 
 ipcRenderer.on('setFullscreen', (event, status) => {
   fullscreen = status;
+  lastBounds = null;
 });
+
+// Текущий масштаб страницы. Main-процесс выставляет его в ready-to-show,
+// поэтому читаем его каждый раз, а не берём из настроек один раз при старте.
+function getZoom() {
+  return webFrame.getZoomFactor() || 1;
+}
 
 // Доступная для контекстного меню область экрана в пикселях страницы.
 function getContextMenuArea() {
   const win = remote.getCurrentWindow();
   const bounds = win.getBounds();
   const { workArea } = remote.screen.getDisplayMatching(bounds);
-  const scale = zoom || 1;
+  const scale = getZoom();
   return {
     left: Math.max(0, (workArea.x - bounds.x) / scale),
     top: Math.max(0, (workArea.y - bounds.y) / scale),
@@ -136,7 +141,7 @@ window.getContextMenuArea = getContextMenuArea;
 function updateElectronWindowBounds() {
   if (fullscreen) return;
 
-  zoom = zoom ? zoom : 1;
+  const zoom = getZoom();
   const windows = [];
 
   const addWindowData = (containerId, windowId) => {
@@ -160,6 +165,7 @@ function updateElectronWindowBounds() {
   addWindowData('equalizer', 'equalizer-window');
   addWindowData('milkdrop', 'gen-window');
   addWindowData('nowplaying', 'now-playing-window');
+  addWindowData('history', 'history-window');
 
   if (windows.length === 0) return;
 
@@ -216,23 +222,84 @@ function updateElectronWindowBounds() {
   let totalWidth = maxRight;
   let totalHeight = maxBottom - minY + 12;
 
-  if (zoom) {
-    totalWidth = Math.round(totalWidth * zoom);
-    totalHeight = Math.round(totalHeight * zoom);
+  totalWidth = Math.round(totalWidth * zoom);
+  totalHeight = Math.round(totalHeight * zoom);
+
+  if (!totalWidth || !totalHeight) return;
+
+  // Пока окно было меньше содержимого (например, до применения масштаба),
+  // браузер мог прокрутить страницу; при overflow: hidden сама она не вернётся.
+  const scroller = document.scrollingElement;
+  if (scroller && (scroller.scrollTop || scroller.scrollLeft)) {
+    scroller.scrollTop = 0;
+    scroller.scrollLeft = 0;
   }
 
-  if (totalWidth && totalHeight) {
-    remote.getCurrentWindow().setBounds({
-      width: totalWidth,
-      height: totalHeight,
-    });
+  if (lastBounds && lastBounds.width === totalWidth && lastBounds.height === totalHeight) {
+    return;
   }
+
+  remote.getCurrentWindow().setBounds({
+    width: totalWidth,
+    height: totalHeight,
+  });
+  lastBounds = { width: totalWidth, height: totalHeight };
 }
 
 window.updateElectronWindowBounds = updateElectronWindowBounds;
 
-setInterval(() => {
-  if (windowLock) {
-    updateElectronWindowBounds();
-  }
-}, 100);
+// Пересчитываем размер окна при изменениях DOM (перемещение, открытие и
+// изменение размера окон webamp, контекстное меню), не чаще раза за кадр.
+let boundsUpdateScheduled = false;
+// Пока зажата левая кнопка, окно может начать перетаскиваться или менять
+// размер: main-процесс расширяет окно (movingWindowStarted), а сообщение
+// unlockWindow приходит позже. Пересчёт в этот момент сжал бы окно обратно,
+// поэтому откладываем его до отпускания кнопки.
+let mouseButtonDown = false;
+
+function scheduleBoundsUpdate() {
+  if (boundsUpdateScheduled) return;
+  boundsUpdateScheduled = true;
+  requestAnimationFrame(() => {
+    boundsUpdateScheduled = false;
+    if (windowLock && !mouseButtonDown) {
+      updateElectronWindowBounds();
+    }
+  });
+}
+
+window.addEventListener('mousedown', (e) => {
+  if (e.button === 0) mouseButtonDown = true;
+}, true);
+
+function releaseMouseButton() {
+  if (!mouseButtonDown) return;
+  mouseButtonDown = false;
+  scheduleBoundsUpdate();
+}
+
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0) releaseMouseButton();
+}, true);
+
+// mouseup не приходит, если кнопку отпустили за пределами окна.
+window.addEventListener('mousemove', (e) => {
+  if ((e.buttons & 1) === 0) releaseMouseButton();
+}, true);
+window.addEventListener('blur', releaseMouseButton);
+
+// Срабатывает и при смене масштаба страницы.
+window.addEventListener('resize', scheduleBoundsUpdate);
+window.addEventListener('scroll', scheduleBoundsUpdate);
+
+window.addEventListener('DOMContentLoaded', () => {
+  new MutationObserver(scheduleBoundsUpdate).observe(document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['style', 'class'],
+  });
+});
+
+// Страховка на случай изменений, которые не видны через DOM.
+setInterval(scheduleBoundsUpdate, 1000);

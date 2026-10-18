@@ -3,6 +3,7 @@ const userData = require('../user-data');
 const playbackState = require('../playback-state');
 const { registerMusicHandlers } = require('./music-handlers');
 const { registerAppHandlers } = require('./app-handlers');
+const history = require('../history');
 
 async function registerIpcHandlers() {
   const client = new YandexMusicClient({
@@ -21,6 +22,8 @@ async function registerIpcHandlers() {
     playbackState.accountData.firstName = result.account.firstName;
     playbackState.accountData.displayName = result.account.displayName;
   });
+
+  history.loadHistory();
 
   registerMusicHandlers(client);
   registerAppHandlers();

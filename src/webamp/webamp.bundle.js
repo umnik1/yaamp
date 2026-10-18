@@ -28862,6 +28862,32 @@ if(false) {}
 
 /***/ }),
 
+/***/ 1679:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+
+var content = __webpack_require__(3514);
+
+if(typeof content === 'string') content = [[module.id, content, '']];
+
+var transform;
+var insertInto;
+
+
+
+var options = {"hmr":true}
+
+options.transform = transform
+options.insertInto = undefined;
+
+var update = __webpack_require__(2379)(content, options);
+
+if(content.locals) module.exports = content.locals;
+
+if(false) {}
+
+/***/ }),
+
 /***/ 9346:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -29940,7 +29966,7 @@ exports.parseAni = parseAni;
 
 /***/ }),
 
-/***/ 4699:
+/***/ 8578:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -31210,7 +31236,8 @@ const WINDOWS = {
   PLAYLIST: "playlist",
   EQUALIZER: "equalizer",
   MILKDROP: "milkdrop",
-  NOW_PLAYING: "nowplaying"
+  NOW_PLAYING: "nowplaying",
+  HISTORY: "history"
 };
 const LOAD_STYLE = {
   BUFFER: "BUFFER",
@@ -31762,8 +31789,8 @@ const defaultWindowsState = {
       }
     },
     [WINDOWS.NOW_PLAYING]: {
-      title: "О треке",
-      size: [4, 6],
+      title: "Track Info",
+      size: [4, 9],
       open: false,
       shade: false,
       canResize: true,
@@ -31774,13 +31801,27 @@ const defaultWindowsState = {
         x: 0,
         y: 0
       }
+    },
+    [WINDOWS.HISTORY]: {
+      title: "History",
+      size: [4, 6],
+      open: false,
+      shade: false,
+      canResize: true,
+      canShade: false,
+      canDouble: false,
+      hotkey: "Alt+H",
+      position: {
+        x: 0,
+        y: 0
+      }
     }
   },
   browserWindowSize: {
     width: 0,
     height: 0
   },
-  windowOrder: [WINDOWS.PLAYLIST, WINDOWS.EQUALIZER, WINDOWS.MILKDROP, WINDOWS.NOW_PLAYING, WINDOWS.MAIN]
+  windowOrder: [WINDOWS.PLAYLIST, WINDOWS.EQUALIZER, WINDOWS.MILKDROP, WINDOWS.NOW_PLAYING, WINDOWS.HISTORY, WINDOWS.MAIN]
 };
 const windows = (state = defaultWindowsState, action) => {
   switch (action.type) {
@@ -33322,8 +33363,8 @@ function getWPixelSize(w, doubled) {
     doubledMultiplier = 1;
   }
   const pix = {
-    height: selectors_WINDOW_HEIGHT + height * WINDOW_RESIZE_SEGMENT_HEIGHT,
-    width: WINDOW_WIDTH + width * WINDOW_RESIZE_SEGMENT_WIDTH
+    height: Math.round(selectors_WINDOW_HEIGHT + height * WINDOW_RESIZE_SEGMENT_HEIGHT),
+    width: Math.round(WINDOW_WIDTH + width * WINDOW_RESIZE_SEGMENT_WIDTH)
   };
   return {
     height: (w.shade ? SHADE_WINDOW_HEIGHT : pix.height) * doubledMultiplier,
@@ -36345,7 +36386,145 @@ function selectAll() {
     type: SELECT_ALL
   };
 }
+;// CONCATENATED MODULE: ./js/genFallback.ts
+
+function genFallback_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function genFallback_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? genFallback_ownKeys(Object(t), !0).forEach(function (r) { (0,defineProperty/* default */.Z)(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : genFallback_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+// Многие скины не содержат GEN.BMP, и тогда окна Milkdrop, «О треке» и
+// «История» рисуются рамкой базового скина. В этом случае собираем спрайты
+// GEN_* из рамки плейлиста (PLEDIT.BMP), которая есть в каждом скине.
+function loadImage(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+// Один слой итогового спрайта: прямоугольник (sx, sy, w, h) из исходной
+// картинки, нарисованный в точке (dx, dy). Если w больше ширины исходника,
+// картинка повторяется по горизонтали.
+function compose(width, height, layers) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (context == null) {
+    throw new Error("Failed to get canvas context");
+  }
+  for (const {
+    img,
+    sx,
+    sy,
+    w,
+    h,
+    dx,
+    dy
+  } of layers) {
+    const tileWidth = Math.max(1, img.width - sx);
+    for (let x = 0; x < w; x += tileWidth) {
+      const cw = Math.min(tileWidth, w - x);
+      context.drawImage(img, sx, sy, cw, h, dx + x, dy, cw, h);
+    }
+  }
+  return canvas.toDataURL();
+}
+async function withGenFallback(images) {
+  if (images == null || images.GEN_TOP_LEFT || !images.PLAYLIST_TOP_TILE) {
+    return images;
+  }
+  const names = ["PLAYLIST_TOP_TILE", "PLAYLIST_TOP_TILE_SELECTED", "PLAYLIST_TOP_LEFT_CORNER", "PLAYLIST_TOP_LEFT_SELECTED", "PLAYLIST_TOP_RIGHT_CORNER", "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", "PLAYLIST_LEFT_TILE", "PLAYLIST_RIGHT_TILE", "PLAYLIST_BOTTOM_TILE", "PLAYLIST_BOTTOM_LEFT_CORNER", "PLAYLIST_BOTTOM_RIGHT_CORNER"];
+  const loaded = await Promise.all(names.map(name => images[name] ? loadImage(images[name]) : null));
+  const src = {};
+  for (let i = 0; i < names.length; i++) {
+    const img = loaded[i];
+    if (img == null) {
+      return images;
+    }
+    src[names[i]] = img;
+  }
+  const full = (img, w, h) => ({
+    img,
+    sx: 0,
+    sy: 0,
+    w,
+    h,
+    dx: 0,
+    dy: 0
+  });
+
+  // Правый угол заголовка плейлиста содержит кнопки «свернуть» и «закрыть».
+  // У окон GEN есть только «закрыть», поэтому левую часть угла закрываем
+  // плиткой заголовка.
+  const topRight = (corner, tile) => compose(25, 20, [full(corner, 25, 20), full(tile, 15, 20)]);
+
+  // Нижние 14 строк из 38-пиксельной нижней панели плейлиста.
+  const bottomY = 38 - 14;
+  const bottomTile = (w, dx = 0) => ({
+    img: src.PLAYLIST_BOTTOM_TILE,
+    sx: 0,
+    sy: bottomY,
+    w,
+    h: 14,
+    dx,
+    dy: 0
+  });
+  const generated = {
+    GEN_TOP_LEFT: compose(25, 20, [full(src.PLAYLIST_TOP_LEFT_CORNER, 25, 20)]),
+    GEN_TOP_LEFT_SELECTED: compose(25, 20, [full(src.PLAYLIST_TOP_LEFT_SELECTED, 25, 20)]),
+    GEN_TOP_RIGHT: topRight(src.PLAYLIST_TOP_RIGHT_CORNER, src.PLAYLIST_TOP_TILE),
+    GEN_TOP_RIGHT_SELECTED: topRight(src.PLAYLIST_TOP_RIGHT_CORNER_SELECTED, src.PLAYLIST_TOP_TILE_SELECTED),
+    GEN_MIDDLE_LEFT: compose(11, 29, [full(src.PLAYLIST_LEFT_TILE, 11, 29)]),
+    GEN_MIDDLE_LEFT_BOTTOM: compose(11, 24, [full(src.PLAYLIST_LEFT_TILE, 11, 24)]),
+    GEN_MIDDLE_RIGHT: compose(8, 29, [{
+      img: src.PLAYLIST_RIGHT_TILE,
+      sx: 12,
+      sy: 0,
+      w: 8,
+      h: 29,
+      dx: 0,
+      dy: 0
+    }]),
+    GEN_MIDDLE_RIGHT_BOTTOM: compose(8, 24, [{
+      img: src.PLAYLIST_RIGHT_TILE,
+      sx: 12,
+      sy: 0,
+      w: 8,
+      h: 24,
+      dx: 0,
+      dy: 0
+    }]),
+    GEN_BOTTOM_FILL: compose(25, 14, [bottomTile(25)]),
+    GEN_BOTTOM_LEFT: compose(125, 14, [bottomTile(125), {
+      img: src.PLAYLIST_BOTTOM_LEFT_CORNER,
+      sx: 0,
+      sy: bottomY,
+      w: 12,
+      h: 14,
+      dx: 0,
+      dy: 0
+    }]),
+    GEN_BOTTOM_RIGHT: compose(125, 14, [bottomTile(125), {
+      img: src.PLAYLIST_BOTTOM_RIGHT_CORNER,
+      sx: 150 - 20,
+      sy: bottomY,
+      w: 20,
+      h: 14,
+      dx: 125 - 20,
+      dy: 0
+    }])
+  };
+  for (const [name, tileName] of [["GEN_TOP_LEFT_END", "PLAYLIST_TOP_TILE"], ["GEN_TOP_CENTER_FILL", "PLAYLIST_TOP_TILE"], ["GEN_TOP_RIGHT_END", "PLAYLIST_TOP_TILE"], ["GEN_TOP_LEFT_RIGHT_FILL", "PLAYLIST_TOP_TILE"], ["GEN_TOP_LEFT_END_SELECTED", "PLAYLIST_TOP_TILE_SELECTED"], ["GEN_TOP_CENTER_FILL_SELECTED", "PLAYLIST_TOP_TILE_SELECTED"], ["GEN_TOP_RIGHT_END_SELECTED", "PLAYLIST_TOP_TILE_SELECTED"], ["GEN_TOP_LEFT_RIGHT_FILL_SELECTED", "PLAYLIST_TOP_TILE_SELECTED"]]) {
+    generated[name] = images[tileName];
+  }
+  if (images.PLAYLIST_CLOSE_SELECTED) {
+    generated.GEN_CLOSE_SELECTED = images.PLAYLIST_CLOSE_SELECTED;
+  }
+  return genFallback_objectSpread(genFallback_objectSpread({}, images), generated);
+}
 ;// CONCATENATED MODULE: ./js/actionCreators/files.ts
+
 
 
 
@@ -36418,6 +36597,7 @@ function setSkinFromBlob(blob) {
     }
     try {
       const skinData = await js_skinParser(blob, JSZip);
+      skinData.images = await withGenFallback(skinData.images);
       files_ipcRenderer.invoke("setSkin", {
         link: JSON.stringify(skinData)
       }).then(() => {});
@@ -36466,6 +36646,7 @@ function setSkinFromClient(data) {
     }
     try {
       const skinData = JSON.parse(data);
+      skinData.images = await withGenFallback(skinData.images);
       dispatch({
         type: SET_SKIN_DATA,
         data: {
@@ -36581,11 +36762,11 @@ function files_loadMediaFiles(tracks, loadStyle = LOAD_STYLE.NONE, atIndex = 0) 
     }
     tracks.forEach((track, i) => {
       const priority = i === 0 ? loadStyle : LOAD_STYLE.NONE;
-      dispatch(loadMediaFile(track, priority, atIndex + i));
+      dispatch(files_loadMediaFile(track, priority, atIndex + i));
     });
   };
 }
-function loadMediaFile(track, priority = LOAD_STYLE.NONE, atIndex = 0) {
+function files_loadMediaFile(track, priority = LOAD_STYLE.NONE, atIndex = 0) {
   return dispatch => {
     const id = uniqueId();
     const {
@@ -37326,7 +37507,7 @@ function actionCreators_stepMarquee() {
 
 
 // TODO: Move to demo
-const compose = (0,redux_devtools_extension/* composeWithDevTools */.Uo)({
+const store_compose = (0,redux_devtools_extension/* composeWithDevTools */.Uo)({
   actionsBlacklist: [UPDATE_TIME_ELAPSED, STEP_MARQUEE]
 });
 /* harmony default export */ function store(media, actionEmitter, customMiddlewares = [], stateOverrides, extras) {
@@ -37340,7 +37521,7 @@ const compose = (0,redux_devtools_extension/* composeWithDevTools */.Uo)({
     actionEmitter.trigger(action.type, action);
     return next(action);
   };
-  const enhancer = compose((0,redux/* applyMiddleware */.md)(...[es.withExtraArgument(extras), mediaMiddleware(media), emitterMiddleware, ...customMiddlewares].filter(Boolean)));
+  const enhancer = store_compose((0,redux/* applyMiddleware */.md)(...[es.withExtraArgument(extras), mediaMiddleware(media), emitterMiddleware, ...customMiddlewares].filter(Boolean)));
 
   // The Redux types are a bit confused, and don't realize that passing an
   // undefined initialState is allowed.
@@ -37617,7 +37798,7 @@ var gen_window = __webpack_require__(326);
 ;// CONCATENATED MODULE: ./js/components/ResizeTarget.tsx
 
 
-const ResizeTarget_excluded = ["currentSize", "setWindowSize", "widthOnly"];
+const ResizeTarget_excluded = ["currentSize", "setWindowSize", "widthOnly", "step"];
 function ResizeTarget_ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function ResizeTarget_objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ResizeTarget_ownKeys(Object(t), !0).forEach(function (r) { (0,defineProperty/* default */.Z)(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ResizeTarget_ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
@@ -37630,7 +37811,8 @@ function ResizeTarget(props) {
   const {
       currentSize,
       setWindowSize,
-      widthOnly
+      widthOnly,
+      step
     } = props,
     passThroughProps = _objectWithoutProperties(props, ResizeTarget_excluded);
   const [mouseDown, setMouseDown] = (0,react.useState)(false);
@@ -37644,8 +37826,11 @@ function ResizeTarget(props) {
     const handleMove = ee => {
       const x = ee.clientX - mouseStart.x;
       const y = ee.clientY - mouseStart.y;
-      const newWidth = Math.max(0, width + Math.round(x / WINDOW_RESIZE_SEGMENT_WIDTH));
-      const newHeight = widthOnly ? width : Math.max(0, height + Math.round(y / WINDOW_RESIZE_SEGMENT_HEIGHT));
+
+      // Размер хранится в сегментах; при мелком шаге он становится дробным.
+      const delta = (d, segment) => step == null ? Math.round(d / segment) : Math.round(d / step) * step / segment;
+      const newWidth = Math.max(0, width + delta(x, WINDOW_RESIZE_SEGMENT_WIDTH));
+      const newHeight = widthOnly ? width : Math.max(0, height + delta(y, WINDOW_RESIZE_SEGMENT_HEIGHT));
       const newSize = [newWidth, newHeight];
       currentNewSize = newSize;
       ResizeTarget_ipcRenderer.invoke("movingWindowStarted").then(() => {});
@@ -37868,7 +38053,8 @@ const GenWindow = ({
             currentSize: windowSize,
             setWindowSize: size => setWindowSize(windowId, size),
             id: resizeId,
-            className: "gen-resize-target"
+            className: "gen-resize-target",
+            step: 1
           })
         })]
       })]
@@ -38395,14 +38581,9 @@ function ContextMenuWrapper_objectSpread(e) { for (var r = 1; r < arguments.leng
 
 
 
+// Доступная для меню область в пикселях страницы.
 
-// Trigger a context menu at the user's cursor position when the user right
-// clicks within this component.
-// For a component that triggers relative to a given component when the user
-// left-clicks see `<ContextMenuTarget />`.
 
-// TODO: Consider using nested contexts to ensure we don't ever have multiple
-// non-nested context menus open at a time.
 // Позиция меню по одной оси в пределах [min, max].
 function placeMenu(click, size, min, max) {
   if (size <= 0 || click + size <= max + 1) {
@@ -38413,6 +38594,13 @@ function placeMenu(click, size, min, max) {
   }
   return Math.max(min, max - size);
 }
+// Trigger a context menu at the user's cursor position when the user right
+// clicks within this component.
+// For a component that triggers relative to a given component when the user
+// left-clicks see `<ContextMenuTarget />`.
+
+// TODO: Consider using nested contexts to ensure we don't ever have multiple
+// non-nested context menus open at a time.
 function ContextMenuWraper(_ref) {
   var _ref2, _menuPosition$y, _ref3, _menuPosition$x;
   let {
@@ -38456,14 +38644,14 @@ function ContextMenuWraper(_ref) {
       return;
     }
     const adjustMenu = () => {
-      var _window$updateElectro2, _window2;
+      var _window$updateElectro2, _window2, _window$getContextMen, _window$getContextMen2, _window3;
       const menuEl = document.querySelector("#webamp-context-menu .context-menu");
       if (!menuEl) {
         return;
       }
       (_window$updateElectro2 = (_window2 = window).updateElectronWindowBounds) === null || _window$updateElectro2 === void 0 ? void 0 : _window$updateElectro2.call(_window2);
       const menuRect = menuEl.getBoundingClientRect();
-      const area = window.getContextMenuArea ? window.getContextMenuArea() : {
+      const area = (_window$getContextMen = (_window$getContextMen2 = (_window3 = window).getContextMenuArea) === null || _window$getContextMen2 === void 0 ? void 0 : _window$getContextMen2.call(_window3)) !== null && _window$getContextMen !== void 0 ? _window$getContextMen : {
         left: 0,
         top: 0,
         right: document.documentElement.clientWidth,
@@ -38485,8 +38673,8 @@ function ContextMenuWraper(_ref) {
         };
       });
       if (nextX !== clickX || nextY !== clickY) {
-        var _window$updateElectro3, _window3;
-        (_window$updateElectro3 = (_window3 = window).updateElectronWindowBounds) === null || _window$updateElectro3 === void 0 ? void 0 : _window$updateElectro3.call(_window3);
+        var _window$updateElectro3, _window4;
+        (_window$updateElectro3 = (_window4 = window).updateElectronWindowBounds) === null || _window$updateElectro3 === void 0 ? void 0 : _window$updateElectro3.call(_window4);
       }
     };
     adjustMenu();
@@ -38502,8 +38690,8 @@ function ContextMenuWraper(_ref) {
       return;
     }
     const handleMenuHover = () => {
-      var _window$updateElectro4, _window4;
-      (_window$updateElectro4 = (_window4 = window).updateElectronWindowBounds) === null || _window$updateElectro4 === void 0 ? void 0 : _window$updateElectro4.call(_window4);
+      var _window$updateElectro4, _window5;
+      (_window$updateElectro4 = (_window5 = window).updateElectronWindowBounds) === null || _window$updateElectro4 === void 0 ? void 0 : _window$updateElectro4.call(_window5);
     };
     const menuRoot = document.getElementById("webamp-context-menu");
     menuRoot === null || menuRoot === void 0 ? void 0 : menuRoot.addEventListener("mouseover", handleMenuHover);
@@ -42369,14 +42557,145 @@ function NowPlayingWindow() {
     }
   }, [theme.background]);
   return /*#__PURE__*/(0,jsx_runtime.jsx)(components_GenWindow, {
-    title: "\u041E \u0442\u0440\u0435\u043A\u0435",
-    plainTitle: true,
+    title: "Track Info",
     windowId: WINDOWS.NOW_PLAYING,
     domId: "now-playing-window",
     resizeId: "now-playing-resize-target",
     children: () => /*#__PURE__*/(0,jsx_runtime.jsx)(TrackInfoContent, {
       track: track,
       theme: theme
+    })
+  });
+}
+// EXTERNAL MODULE: ./css/history-window.css
+var history_window = __webpack_require__(1679);
+;// CONCATENATED MODULE: ./js/components/HistoryWindow/index.tsx
+
+
+
+
+
+
+
+
+
+const {
+  ipcRenderer: HistoryWindow_ipcRenderer
+} = window.require("electron");
+function HistoryWindow_formatDuration(ms) {
+  if (!ms) return "";
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${sec.toString().padStart(2, "0")}`;
+}
+function formatPlayedAt(timestamp) {
+  const date = new Date(timestamp);
+  const time = date.toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  if (date.toDateString() === new Date().toDateString()) {
+    return time;
+  }
+  return `${date.toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit"
+  })} ${time}`;
+}
+function HistoryWindow_coverUrl(uri) {
+  if (!uri) return null;
+  return `https://${uri.replace("%%", "50x50")}`;
+}
+function HistoryWindow() {
+  const [entries, setEntries] = (0,react.useState)([]);
+  const [selected, setSelected] = (0,react.useState)(null);
+  const loadMediaFile = useActionCreator(files_loadMediaFile);
+  const trackCount = useTypedSelector(getTrackCount);
+  (0,react.useEffect)(() => {
+    HistoryWindow_ipcRenderer.invoke("getHistory").then(data => {
+      if (data) setEntries(data);
+    });
+    const onUpdate = (_event, data) => {
+      setEntries(data);
+      setSelected(null);
+    };
+    HistoryWindow_ipcRenderer.on("historyUpdated", onUpdate);
+    return () => {
+      HistoryWindow_ipcRenderer.removeListener("historyUpdated", onUpdate);
+    };
+  }, []);
+
+  // Добавляет трек в конец текущего плейлиста и сразу включает его.
+  const playEntry = entry => {
+    loadMediaFile({
+      url: entry.id,
+      metaData: {
+        artist: entry.artists || "",
+        title: entry.title
+      },
+      duration: entry.durationMs ? Math.floor(entry.durationMs / 1000) : undefined
+    }, LOAD_STYLE.PLAY, trackCount);
+  };
+  return /*#__PURE__*/(0,jsx_runtime.jsx)(components_GenWindow, {
+    title: "History",
+    windowId: WINDOWS.HISTORY,
+    domId: "history-window",
+    resizeId: "history-resize-target",
+    children: () => /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
+      className: "history-content",
+      children: [entries.length === 0 ? /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+        className: "history-empty",
+        children: "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u043F\u0443\u0441\u0442\u0430"
+      }) : /*#__PURE__*/(0,jsx_runtime.jsx)("ul", {
+        className: "history-list",
+        children: entries.map((entry, i) => {
+          const cover = HistoryWindow_coverUrl(entry.coverUri);
+          return /*#__PURE__*/(0,jsx_runtime.jsxs)("li", {
+            className: i === selected ? "history-item selected" : "history-item",
+            title: "\u0414\u0432\u043E\u0439\u043D\u043E\u0439 \u043A\u043B\u0438\u043A \u2014 \u0432\u043E\u0441\u043F\u0440\u043E\u0438\u0437\u0432\u0435\u0441\u0442\u0438",
+            onClick: () => setSelected(i),
+            onDoubleClick: () => playEntry(entry),
+            children: [cover ? /*#__PURE__*/(0,jsx_runtime.jsx)("img", {
+              className: "history-cover",
+              src: cover,
+              alt: "",
+              draggable: false
+            }) : /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+              className: "history-cover"
+            }), /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
+              className: "history-text",
+              children: [/*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+                className: "history-title",
+                children: entry.title
+              }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+                className: "history-artist",
+                children: entry.artists
+              })]
+            }), /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
+              className: "history-meta",
+              children: [/*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+                children: formatPlayedAt(entry.playedAt)
+              }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+                children: HistoryWindow_formatDuration(entry.durationMs)
+              })]
+            })]
+          }, `${entry.id}-${entry.playedAt}`);
+        })
+      }), /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
+        className: "history-footer",
+        children: [/*#__PURE__*/(0,jsx_runtime.jsxs)("span", {
+          children: [entries.length, " \u0442\u0440."]
+        }), /*#__PURE__*/(0,jsx_runtime.jsx)("button", {
+          type: "button",
+          className: "history-clear-btn",
+          disabled: entries.length === 0,
+          onClick: () => {
+            HistoryWindow_ipcRenderer.invoke("clearHistory");
+          },
+          children: "\u041E\u0447\u0438\u0441\u0442\u0438\u0442\u044C"
+        })]
+      })]
     })
   });
 }
@@ -42590,7 +42909,7 @@ const imageSelectors = {
   GEN_TOP_LEFT_RIGHT_FILL_SELECTED: [".gen-window.selected .gen-top-left-fill", ".gen-window.selected .gen-top-right-fill"],
   GEN_BOTTOM_LEFT: [".gen-window .gen-bottom-left"],
   GEN_BOTTOM_RIGHT: [".gen-window .gen-bottom-right"],
-  GEN_BOTTOM_FILL: [".gen-window .gen-bottom"],
+  GEN_BOTTOM_FILL: [".gen-window .gen-bottom", ".gen-window .gen-bottom-fill"],
   GEN_MIDDLE_LEFT: [".gen-window .gen-middle-left"],
   GEN_MIDDLE_LEFT_BOTTOM: [".gen-window .gen-middle-left-bottom"],
   GEN_MIDDLE_RIGHT: [".gen-window .gen-middle-right"],
@@ -42834,6 +43153,7 @@ var webamp = __webpack_require__(7490);
 
 
 
+
 /**
  * Constructs the windows to render
  */
@@ -42912,6 +43232,8 @@ function App({
           });
         case WINDOWS.NOW_PLAYING:
           return /*#__PURE__*/(0,jsx_runtime.jsx)(NowPlayingWindow, {});
+        case WINDOWS.HISTORY:
+          return /*#__PURE__*/(0,jsx_runtime.jsx)(HistoryWindow, {});
         default:
           throw new Error(`Tried to render an unknown window: ${id}`);
       }
@@ -43004,6 +43326,10 @@ function bindHotkeys(dispatch) {
         case 73:
           // ALT+I
           dispatch(toggleWindowAndSave("nowplaying"));
+          break;
+        case 72:
+          // ALT+H
+          dispatch(toggleWindowAndSave("history"));
           break;
       }
     } else {
@@ -44005,7 +44331,22 @@ exports = module.exports = __webpack_require__(9252)(false);
 
 
 // module
-exports.push([module.id, "#webamp .gen-text-space{width:5px}#webamp .gen-text-letter{height:7px;display:inline-block}#webamp .gen-window{width:275px;height:116px;display:flex;flex-direction:column}#webamp .gen-top{height:20px;display:flex;flex-direction:row}#webamp .gen-top-left{width:25px;height:20px}#webamp .gen-top-title{line-height:7px;margin-top:2px;padding:0 3px 0 4px}#webamp .gen-top-left-fill{flex-grow:1;height:20px;background-position:0}#webamp .gen-top-right-fill{flex-grow:1;height:20px;background-position:100%}#webamp .gen-top-left-end,#webamp .gen-top-right,#webamp .gen-top-right-end{width:25px;height:20px}#webamp .gen-close{width:9px;height:9px;position:absolute;right:2px;top:3px}#webamp .gen-middle{flex-grow:1;display:flex;flex-direction:row;position:relative}#webamp .gen-middle-left{width:11px}#webamp .gen-middle-left-bottom{width:11px;height:24px;bottom:0;position:absolute}#webamp .gen-middle-center{flex-grow:1;position:relative}#webamp .gen-middle-right{width:8px}#webamp .gen-middle-right-bottom{width:8px;height:24px;bottom:0;position:absolute}#webamp .gen-bottom{height:14px;background-repeat:repeat-x;display:flex;flex-direction:row;position:relative;flex-shrink:0}#webamp .gen-bottom-left{position:relative;left:auto;flex-shrink:0;width:125px;height:14px}#webamp .gen-bottom-fill{flex:1;height:14px;min-width:0;background-repeat:repeat-x}#webamp .gen-bottom-right{position:relative;right:auto;flex-shrink:0;width:125px;height:14px}#webamp .gen-bottom-right .gen-resize-target{position:absolute;right:0;bottom:0;height:20px;width:20px;cursor:nwse-resize}", ""]);
+exports.push([module.id, "#webamp .gen-text-space{width:5px}#webamp .gen-text-letter{height:7px;display:inline-block}#webamp .gen-window{width:275px;height:116px;display:flex;flex-direction:column}#webamp .gen-top{height:20px;display:flex;flex-direction:row}#webamp .gen-top-left{width:25px;height:20px}#webamp .gen-top-title{line-height:7px;margin-top:2px;padding:0 3px 0 4px}#webamp .gen-top-left-fill{flex-grow:1;height:20px;background-position:0}#webamp .gen-top-right-fill{flex-grow:1;height:20px;background-position:100%}#webamp .gen-top-left-end,#webamp .gen-top-right,#webamp .gen-top-right-end{width:25px;height:20px}#webamp .gen-close{width:9px;height:9px;position:absolute;right:2px;top:3px}#webamp .gen-middle{flex-grow:1;min-height:0;display:flex;flex-direction:row;position:relative}#webamp .gen-middle-left{width:11px}#webamp .gen-middle-left-bottom{width:11px;height:24px;bottom:0;position:absolute}#webamp .gen-middle-center{flex-grow:1;min-width:0;overflow:hidden;position:relative}#webamp .gen-middle-right{width:8px}#webamp .gen-middle-right-bottom{width:8px;height:24px;bottom:0;position:absolute}#webamp .gen-bottom{height:14px;background-repeat:repeat-x;display:flex;flex-direction:row;position:relative;flex-shrink:0}#webamp .gen-bottom-left{position:relative;left:auto;flex-shrink:0;width:125px;height:14px}#webamp .gen-bottom-fill{flex:1;height:14px;min-width:0;background-repeat:repeat-x}#webamp .gen-bottom-right{position:relative;right:auto;flex-shrink:0;width:125px;height:14px}#webamp .gen-bottom-right .gen-resize-target{position:absolute;right:0;bottom:0;height:20px;width:20px;cursor:nwse-resize}", ""]);
+
+// exports
+
+
+/***/ }),
+
+/***/ 3514:
+/***/ ((module, exports, __webpack_require__) => {
+
+exports = module.exports = __webpack_require__(9252)(false);
+// imports
+
+
+// module
+exports.push([module.id, "#webamp #history-window .gen-middle-center{background-color:#000}#webamp .history-content{display:flex;flex-direction:column;height:100%;background-color:#000;color:#0f0;font-family:Arial,sans-serif;font-size:11px;line-height:1.3}#webamp .history-empty{display:flex;flex:1;align-items:center;justify-content:center;font-size:12px;color:#0a0}#webamp .history-list{flex:1;min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto;overflow-x:hidden}#webamp .history-item{display:flex;align-items:center;gap:4px;padding:2px 4px;cursor:default;user-select:none}#webamp .history-item:hover{background:rgba(0,255,0,.08)}#webamp .history-item.selected{background:#00f;color:#fff}#webamp .history-cover{flex-shrink:0;width:24px;height:24px;object-fit:cover;background:#030}#webamp .history-text{flex:1;min-width:0}#webamp .history-artist,#webamp .history-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#webamp .history-title{font-weight:700}#webamp .history-artist,#webamp .history-meta{color:#0a0}#webamp .history-item.selected .history-artist,#webamp .history-item.selected .history-meta{color:#ccc}#webamp .history-meta{flex-shrink:0;font-size:10px;text-align:right}#webamp .history-footer{display:flex;align-items:center;justify-content:space-between;padding:2px 4px;border-top:1px solid #030;color:#0a0}#webamp .history-clear-btn{padding:1px 6px;border:1px solid #0a0;border-radius:2px;background:transparent;color:#0f0;font:inherit;cursor:pointer}#webamp .history-clear-btn:hover:not(:disabled){background:rgba(0,255,0,.12)}#webamp .history-clear-btn:disabled{opacity:.35;cursor:default}#webamp .history-list::-webkit-scrollbar,#webamp .now-playing-content::-webkit-scrollbar{width:5px}#webamp .history-list::-webkit-scrollbar-track,#webamp .now-playing-content::-webkit-scrollbar-track{background:transparent}#webamp .history-list::-webkit-scrollbar-thumb,#webamp .now-playing-content::-webkit-scrollbar-thumb{background:rgba(0,255,0,.35);border-radius:2px}#webamp .history-list::-webkit-scrollbar-thumb:hover,#webamp .now-playing-content::-webkit-scrollbar-thumb:hover{background:rgba(0,255,0,.6)}", ""]);
 
 // exports
 
@@ -44050,7 +44391,7 @@ exports = module.exports = __webpack_require__(9252)(false);
 
 
 // module
-exports.push([module.id, "#webamp #now-playing-window .gen-top-title-plain{font-family:Arial,sans-serif;font-size:8px;font-weight:700;color:#0f0;line-height:9px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}#webamp #now-playing-window.selected .gen-top-title-plain{color:#fff}#webamp #now-playing-window .gen-middle-center{background-color:#000}#webamp .now-playing-content{display:flex;flex-direction:column;align-items:center;height:100%;overflow-y:auto;overflow-x:hidden;padding:4px;box-sizing:border-box;font-family:Arial,sans-serif;font-size:11px;line-height:1.35}#webamp .now-playing-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;background-color:#000}#webamp .now-playing-cover{width:120px;height:120px;object-fit:cover;margin-bottom:6px;border:1px solid}#webamp .now-playing-actions{display:flex;justify-content:center;gap:8px;margin-bottom:8px;width:100%}#webamp .now-playing-action-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid;border-radius:3px;background:rgba(0,0,0,.25);cursor:pointer;opacity:.9}#webamp .now-playing-action-btn:hover:not(:disabled){opacity:1;background:hsla(0,0%,100%,.12)}#webamp .now-playing-action-btn:disabled{opacity:.35;cursor:default}#webamp .now-playing-action-btn svg{width:14px;height:14px;display:block}#webamp .now-playing-details{width:100%}#webamp .now-playing-title{font-size:13px;font-weight:700;text-align:center;margin-bottom:6px;word-break:break-word}#webamp .now-playing-row{display:flex;gap:4px;margin-bottom:2px}#webamp .now-playing-label{flex-shrink:0;width:72px}#webamp .now-playing-value{flex:1;word-break:break-word}", ""]);
+exports.push([module.id, "#webamp #now-playing-window .gen-middle-center{background-color:#000}#webamp .now-playing-content{display:flex;flex-direction:column;align-items:center;height:100%;overflow-y:auto;overflow-x:hidden;padding:4px;box-sizing:border-box;font-family:Arial,sans-serif;font-size:11px;line-height:1.35}#webamp .now-playing-content>*{flex-shrink:0}#webamp .now-playing-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;background-color:#000}#webamp .now-playing-cover{width:120px;height:120px;object-fit:cover;margin-bottom:6px;border:1px solid}#webamp .now-playing-actions{display:flex;justify-content:center;gap:8px;margin-bottom:8px;width:100%}#webamp .now-playing-action-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid;border-radius:3px;background:rgba(0,0,0,.25);cursor:pointer;opacity:.9}#webamp .now-playing-action-btn:hover:not(:disabled){opacity:1;background:hsla(0,0%,100%,.12)}#webamp .now-playing-action-btn:disabled{opacity:.35;cursor:default}#webamp .now-playing-action-btn svg{width:14px;height:14px;display:block}#webamp .now-playing-details{width:100%}#webamp .now-playing-title{font-size:13px;font-weight:700;text-align:center;margin-bottom:6px;word-break:break-word}#webamp .now-playing-row{display:flex;gap:4px;margin-bottom:2px}#webamp .now-playing-label{flex-shrink:0;width:72px}#webamp .now-playing-value{flex:1;word-break:break-word}", ""]);
 
 // exports
 
@@ -51400,8 +51741,8 @@ async function parseFile(filePath, options = {}) {
     throw new Error('To load Web API File objects use parseBlob instead. For loading files, you need to import with the "node" condition is set.');
 }
 //# sourceMappingURL=core.js.map
-// EXTERNAL MODULE: ./js/webampLazy.tsx + 151 modules
-var webampLazy = __webpack_require__(4699);
+// EXTERNAL MODULE: ./js/webampLazy.tsx + 153 modules
+var webampLazy = __webpack_require__(8578);
 ;// CONCATENATED MODULE: ./js/webamp.js
 
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }

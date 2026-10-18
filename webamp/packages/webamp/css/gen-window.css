@@ -70,6 +70,8 @@
 
 #webamp .gen-middle {
   flex-grow: 1;
+  /* Содержимое не должно растягивать окно сверх заданного размера. */
+  min-height: 0;
   display: flex;
   flex-direction: row;
   position: relative;
@@ -88,6 +90,8 @@
 
 #webamp .gen-middle-center {
   flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
   position: relative;
 }
 

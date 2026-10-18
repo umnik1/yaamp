@@ -33,6 +33,7 @@ import {
 import LoadQueue from "../loadQueue";
 
 import { removeAllTracks } from "./playlist";
+import { withGenFallback } from "../genFallback";
 import { setPreamp, setEqBand } from "./equalizer";
 import {
   LoadStyle,
@@ -107,6 +108,7 @@ export function setSkinFromBlob(blob: Blob | Promise<Blob>): Thunk {
     }
     try {
       const skinData = await skinParser(blob, JSZip);
+      skinData.images = await withGenFallback(skinData.images);
 
       ipcRenderer.invoke("setSkin", {link: JSON.stringify(skinData)}).then(() => {})
 
@@ -148,6 +150,7 @@ export function setSkinFromClient(data: string): Thunk {
     }
     try {
       const skinData = JSON.parse(data);
+      skinData.images = await withGenFallback(skinData.images);
 
       dispatch({
         type: SET_SKIN_DATA,

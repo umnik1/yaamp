@@ -3,6 +3,7 @@ const { getTrackUrl } = require('yandex-music-client/trackUrl');
 const mainWindow = require('../main-window');
 const playbackState = require('../playback-state');
 const userData = require('../user-data');
+const history = require('../history');
 const { rpc, sessionId } = require('../discord');
 
 const DEFAULT_WHEEL_SEEDS = ['user:onyourwave'];
@@ -12,10 +13,40 @@ function sendToRenderer(channel, ...args) {
   mainWindow.get()?.webContents.send(channel, ...args);
 }
 
+const API_ERROR_MESSAGE = 'Не удалось получить данные из Яндекс Музыки';
+
+// Регистрирует IPC-обработчик, который при ошибке API убирает лоадер и
+// показывает сообщение, а затем пробрасывает ошибку вызывающему коду.
+function handle(channel, fn, errorMessage = API_ERROR_MESSAGE) {
+  ipcMain.handle(channel, async (...args) => {
+    try {
+      return await fn(...args);
+    } catch (error) {
+      console.error(`[${channel}]`, error);
+      sendToRenderer('hideLoader');
+      sendToRenderer('showMessage', errorMessage);
+      throw error;
+    }
+  });
+}
+
+// Растёт при каждой замене плейлиста; по нему фоновая догрузка радио
+// понимает, что пользователь уже переключился на другой плейлист.
+let playlistGeneration = 0;
+
+function replaceTracks(tracks) {
+  playlistGeneration++;
+  sendToRenderer('setTracks', tracks);
+}
+
+function logError(context) {
+  return (error) => console.error(`[${context}]`, error);
+}
+
 function registerMusicHandlers(client) {
   const { accountData } = playbackState;
 
-  ipcMain.handle('getLikedTracks', async () => {
+  handle('getLikedTracks', async () => {
     playbackState.nowPlaylist = [];
     const likeTrackIDs = [];
 
@@ -28,7 +59,35 @@ function registerMusicHandlers(client) {
     return client.tracks.getTracks({ 'track-ids': likeTrackIDs });
   });
 
-  ipcMain.handle('getTrackByID', async (event, trackid) => {
+  const updateTrackMetadata = async (trackid) => {
+    const trackData = await client.tracks.getTracks({ 'track-ids': [trackid] });
+    const element = trackData.result[0];
+    if (!element) return;
+
+    playbackState.currentTrackMetadata = element;
+    sendToRenderer('trackMetadata', element);
+    if (history.addTrack(element)) {
+      sendToRenderer('historyUpdated', history.entries);
+    }
+
+    const artist = element.artists.map((a) => a.name);
+    rpc.setActivity({
+      details: `${element.title}`,
+      state: `${artist.join(', ')}`,
+      largeImageKey: 'https://' + element.coverUri.replace('%%', '200x200'),
+      largeImageText: `${artist.join(', ')} - ${element.title}`,
+      smallImageKey: 'https://yaamp.ru/icon.png',
+      smallImageText: 'Yaamp.ru',
+      buttons: [
+        {
+          label: 'Listen to this track',
+          url: `https://music.yandex.ru/track/${element.id}`,
+        },
+      ],
+    }).catch(logError('discord'));
+  };
+
+  handle('getTrackByID', async (event, trackid) => {
     if (trackid.includes('blob')) {
       return trackid;
     }
@@ -37,42 +96,24 @@ function registerMusicHandlers(client) {
 
     const data = await getTrackUrl(client, trackid);
 
-    await client.tracks.playAudio({
+    // Статистика прослушивания и метаданные не должны задерживать или
+    // ломать воспроизведение, поэтому их ошибки только логируются.
+    client.tracks.playAudio({
       'track-id': trackid,
       from: RADIO_FROM,
       timestamp: new Date().toISOString(),
       uid: accountData.uid,
       'play-id': sessionId,
-    });
+    }).catch(logError('playAudio'));
 
     if (!/^.*-.*-.*-.*-.*$/.test(trackid)) {
-      await client.tracks.getTracks({ 'track-ids': [trackid] }).then((trackData) => {
-        const element = trackData.result[0];
-        playbackState.currentTrackMetadata = element;
-        sendToRenderer('trackMetadata', element);
-        const artist = element.artists.map((a) => a.name);
-
-        rpc.setActivity({
-          details: `${element.title}`,
-          state: `${artist.join(', ')}`,
-          largeImageKey: 'https://' + element.coverUri.replace('%%', '200x200'),
-          largeImageText: `${artist.join(', ')} - ${element.title}`,
-          smallImageKey: 'https://yaamp.ru/icon.png',
-          smallImageText: 'Yaamp.ru',
-          buttons: [
-            {
-              label: 'Listen to this track',
-              url: `https://music.yandex.ru/track/${element.id}`,
-            },
-          ],
-        });
-      });
+      updateTrackMetadata(trackid).catch(logError('trackMetadata'));
     }
 
     return data;
-  });
+  }, 'Не удалось загрузить трек');
 
-  ipcMain.handle('getUserPlaylists', async () => {
+  handle('getUserPlaylists', async () => {
     const userPlaylists = [];
 
     await client.playlists.getPlayLists(client, accountData.uid).then((data) => {
@@ -102,14 +143,14 @@ function registerMusicHandlers(client) {
     return waves;
   };
 
-  ipcMain.handle('getWheelWaves', async () => fetchWheelWaves());
+  handle('getWheelWaves', async () => fetchWheelWaves());
 
-  ipcMain.handle('resetWheel', async () => {
+  handle('resetWheel', async () => {
     saveWheelSeeds(DEFAULT_WHEEL_SEEDS);
     return fetchWheelWaves();
   });
 
-  ipcMain.handle('setWave', async (event, data) => {
+  handle('setWave', async (event, data) => {
     playbackState.nowPlaylist = [];
 
     if (data.seeds) {
@@ -120,13 +161,13 @@ function registerMusicHandlers(client) {
 
     const { tracks } = await client.rotor.getRotorSessionTracksBySeed(data, 10);
 
-    sendToRenderer('setTracks', tracks);
+    replaceTracks(tracks);
     sendToRenderer('hideLoader');
 
     return true;
   });
 
-  ipcMain.handle('setPlaylist', async (event, data) => {
+  handle('setPlaylist', async (event, data) => {
     await client.playlists.getPlaylistById(data.uid, data.kind).then(async (playlistData) => {
       playbackState.nowPlaylist = {
         uid: playlistData.result.uid,
@@ -137,14 +178,14 @@ function registerMusicHandlers(client) {
       const trackIds = playlistData.result.tracks.map((element) => element.id);
 
       await client.tracks.getTracks({ 'track-ids': trackIds }).then((tracksData) => {
-        sendToRenderer('setTracks', tracksData.result);
+        replaceTracks(tracksData.result);
       });
     });
 
     return true;
   });
 
-  ipcMain.handle('getUserArtists', async () => {
+  handle('getUserArtists', async () => {
     const userArtists = [];
 
     await client.artists.getArtists(client, accountData.uid).then((data) => {
@@ -156,13 +197,13 @@ function registerMusicHandlers(client) {
     return userArtists;
   });
 
-  ipcMain.handle('setArtist', async (event, data) => {
+  handle('setArtist', async (event, data) => {
     sendToRenderer('setLoader');
 
     try {
       const artistData = await client.artists.getPopularTracks(data.id);
       const tracksData = await client.tracks.getTracks({ 'track-ids': artistData.result.tracks });
-      sendToRenderer('setTracks', tracksData.result);
+      replaceTracks(tracksData.result);
     } finally {
       sendToRenderer('hideLoader');
     }
@@ -170,7 +211,7 @@ function registerMusicHandlers(client) {
     return true;
   });
 
-  ipcMain.handle('getUserAlbums', async () => {
+  handle('getUserAlbums', async () => {
     const userAlbumsIds = [];
     const userAlbums = [];
 
@@ -194,21 +235,21 @@ function registerMusicHandlers(client) {
     return userAlbums;
   });
 
-  ipcMain.handle('setAlbum', async (event, data) => {
+  handle('setAlbum', async (event, data) => {
     playbackState.nowPlaylist = [];
 
     await client.albums.getAlbumsWithTracks(data.id).then(async (albumData) => {
       const trackIds = albumData.result.volumes[0].map((element) => element.id);
 
       await client.tracks.getTracks({ 'track-ids': trackIds }).then((tracksData) => {
-        sendToRenderer('setTracks', tracksData.result);
+        replaceTracks(tracksData.result);
       });
     });
 
     return true;
   });
 
-  ipcMain.handle('getRotor', async () => {
+  handle('getRotor', async () => {
     const stations = [];
 
     await client.rotor.getStationsList('ru').then((data) => {
@@ -223,9 +264,12 @@ function registerMusicHandlers(client) {
     return stations;
   });
 
+  // Треки станции приходят порциями, и каждая следующая зависит от последнего
+  // трека предыдущей. Первую порцию показываем сразу, остальные дописываем
+  // в конец плейлиста по мере загрузки.
   const loadRadioTracks = async (stationId, iterations) => {
-    const tracks = [];
     let lastTrackID = null;
+    let generation = null;
 
     await client.rotor.sendStationFeedback(
       stationId,
@@ -235,35 +279,44 @@ function registerMusicHandlers(client) {
 
     sendToRenderer('setLoader');
 
-    for (let i = 0; i < iterations; i++) {
-      if (i !== 0) {
+    try {
+      for (let i = 0; i < iterations; i++) {
+        const data = await client.rotor.getStationTracks(stationId, true, lastTrackID);
+        const tracks = data.result.sequence.map((element) => element.track);
+        if (tracks.length === 0) break;
+
         lastTrackID = tracks[tracks.length - 1].id;
+        if (i === 0) {
+          replaceTracks(tracks);
+          generation = playlistGeneration;
+        } else if (generation !== playlistGeneration) {
+          break;
+        } else {
+          sendToRenderer('appendTracks', tracks);
+        }
+
+        if (i === 0) {
+          sendToRenderer('hideLoader');
+        }
       }
-
-      await client.rotor.getStationTracks(stationId, true, lastTrackID).then((data) => {
-        data.result.sequence.forEach((element) => {
-          tracks.push(element.track);
-        });
-      });
+    } finally {
+      sendToRenderer('hideLoader');
     }
-
-    sendToRenderer('setTracks', tracks);
-    sendToRenderer('hideLoader');
   };
 
-  ipcMain.handle('setRotor', async (event, data) => {
+  handle('setRotor', async (event, data) => {
     playbackState.nowPlaylist = [];
     await loadRadioTracks(data.id, 15);
     return true;
   });
 
-  ipcMain.handle('setMywave', async () => {
+  handle('setMywave', async () => {
     playbackState.nowPlaylist = [];
     await loadRadioTracks('user:onyourwave', 25);
     return true;
   });
 
-  ipcMain.handle('setMyloved', async () => {
+  handle('setMyloved', async () => {
     playbackState.nowPlaylist = [];
     const likeTrackIDs = [];
 
@@ -274,11 +327,11 @@ function registerMusicHandlers(client) {
     });
 
     await client.tracks.getTracks({ 'track-ids': likeTrackIDs }).then((data) => {
-      sendToRenderer('setTracks', data.result);
+      replaceTracks(data.result);
     });
   });
 
-  ipcMain.handle('search', async (event, data) => {
+  handle('search', async (event, data) => {
     let best = [];
 
     await client.search.getSearchSuggest(data.searchText).then((searchData) => {
@@ -303,7 +356,7 @@ function registerMusicHandlers(client) {
     return best;
   });
 
-  ipcMain.handle('lendings', async () => {
+  handle('lendings', async () => {
     const ALL_LANDING_BLOCKS = ['personalplaylists'];
     const allBlocks = ALL_LANDING_BLOCKS.join(',');
 
@@ -312,39 +365,54 @@ function registerMusicHandlers(client) {
     });
   });
 
-  ipcMain.handle('setLike', async () => {
+  handle('setLike', async () => {
     await client.tracks.likeTracks(client, { 'track-ids': playbackState.nowPlaying }).then(() => {
       sendToRenderer('showMessage', 'Трек добавлен в "Мне нравится"');
     });
   });
 
-  ipcMain.handle('setDislike', async () => {
+  handle('setDislike', async () => {
     await client.tracks.dislikeTracks(accountData.uid, { 'track-ids': playbackState.nowPlaying }).then(() => {
       sendToRenderer('showMessage', 'Дизлайк поставлен');
     });
   });
 
-  ipcMain.handle('nowPlaylist', async () => playbackState.nowPlaylist);
+  handle('nowPlaylist', async () => playbackState.nowPlaylist);
 
-  ipcMain.handle('getCurrentTrackMetadata', async () => playbackState.currentTrackMetadata);
+  handle('getCurrentTrackMetadata', async () => playbackState.currentTrackMetadata);
 
-  ipcMain.handle('setPlaylistRecomendation', async (event, data) => {
+  handle('getHistory', async () => history.entries);
+
+  handle('clearHistory', async () => {
+    history.clearHistory();
+    sendToRenderer('historyUpdated', history.entries);
+    return true;
+  });
+
+  handle('setPlaylistRecomendation', async (event, data) => {
+    const REQUESTS = 25;
+    const CONCURRENCY = 5;
     const tracks = [];
 
     sendToRenderer('setLoader');
 
-    for (let i = 0; i < 25; i++) {
-      await client.playlists.getRecommendations(data.uid, data.kind).then((recData) => {
-        recData.result.tracks.forEach((element) => {
-          tracks.push(element.id);
-        });
-      });
-    }
+    try {
+      for (let i = 0; i < REQUESTS; i += CONCURRENCY) {
+        const batch = Array.from({ length: Math.min(CONCURRENCY, REQUESTS - i) }, () =>
+          client.playlists.getRecommendations(data.uid, data.kind)
+        );
+        for (const recData of await Promise.all(batch)) {
+          recData.result.tracks.forEach((element) => {
+            tracks.push(element.id);
+          });
+        }
+      }
 
-    await client.tracks.getTracks({ 'track-ids': tracks }).then((tracksData) => {
-      sendToRenderer('setTracks', tracksData.result);
+      const tracksData = await client.tracks.getTracks({ 'track-ids': [...new Set(tracks)] });
+      replaceTracks(tracksData.result);
+    } finally {
       sendToRenderer('hideLoader');
-    });
+    }
   });
 }
 

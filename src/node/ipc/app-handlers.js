@@ -3,6 +3,12 @@ const { ipcMain, session, nativeImage, shell, app } = require('electron');
 const mainWindow = require('../main-window');
 const playbackState = require('../playback-state');
 const userData = require('../user-data');
+const {
+  WINDOW_DEFAULTS,
+  ensureWindowSettings,
+  settingsKeyFor,
+  windowIdForResizeTarget,
+} = require('../window-defaults');
 const { createApiServer, stopApiServer } = require('../api-server');
 const { play, trackinfo } = require('../touch-bar');
 
@@ -66,25 +72,11 @@ function registerAppHandlers() {
   });
 
   ipcMain.handle('saveWindowState', async (event, data) => {
-    const { settingsData } = userData;
-    const windowKeys = {
-      main: 'mainWindow',
-      playlist: 'playlistWindow',
-      equalizer: 'equalizerWindow',
-      milkdrop: 'milkdropWindow',
-      nowplaying: 'nowPlayingWindow',
-    };
-
-    const settingsKey = windowKeys[data.windowId];
-    if (!settingsKey) {
+    if (!settingsKeyFor(data.windowId)) {
       return false;
     }
 
-    if (!settingsData.windows[settingsKey]) {
-      settingsData.windows[settingsKey] = { x: 0, y: 0, visible: true };
-    }
-
-    const entry = settingsData.windows[settingsKey];
+    const entry = ensureWindowSettings(userData.settingsData.windows, data.windowId);
     if (data.visible !== undefined) entry.visible = data.visible;
     if (data.x !== undefined) entry.x = data.x;
     if (data.y !== undefined) entry.y = data.y;
@@ -100,25 +92,10 @@ function registerAppHandlers() {
       const { settingsData } = userData;
 
       windows.forEach((window) => {
-        if (window.key == 'main') {
-          settingsData.windows.mainWindow.x = window.x;
-          settingsData.windows.mainWindow.y = window.y;
-        } else if (window.key == 'playlist') {
-          settingsData.windows.playlistWindow.x = window.x;
-          settingsData.windows.playlistWindow.y = window.y;
-        } else if (window.key == 'equalizer') {
-          settingsData.windows.equalizerWindow.x = window.x;
-          settingsData.windows.equalizerWindow.y = window.y;
-        } else if (window.key == 'milkdrop') {
-          settingsData.windows.milkdropWindow.x = window.x;
-          settingsData.windows.milkdropWindow.y = window.y;
-        } else if (window.key == 'nowplaying') {
-          if (!settingsData.windows.nowPlayingWindow) {
-            settingsData.windows.nowPlayingWindow = { x: 275, y: 128, size: [4, 6], visible: false };
-          }
-          settingsData.windows.nowPlayingWindow.x = window.x;
-          settingsData.windows.nowPlayingWindow.y = window.y;
-        }
+        if (!settingsKeyFor(window.key)) return;
+        const entry = ensureWindowSettings(settingsData.windows, window.key);
+        entry.x = window.x;
+        entry.y = window.y;
       });
 
       userData.saveSettings((error) => {
@@ -152,23 +129,9 @@ function registerAppHandlers() {
   ipcMain.handle('getSettings', async () => {
     const { settingsData } = userData;
 
-    if (!settingsData.windows.milkdropWindow) {
-      settingsData.windows.milkdropWindow = {
-        x: 275,
-        y: 12,
-        size: [7, 8],
-        visible: true,
-      };
-    }
-
-    if (!settingsData.windows.nowPlayingWindow) {
-      settingsData.windows.nowPlayingWindow = {
-        x: 275,
-        y: 128,
-        size: [4, 6],
-        visible: false,
-      };
-    }
+    Object.keys(WINDOW_DEFAULTS).forEach((windowId) => {
+      ensureWindowSettings(settingsData.windows, windowId);
+    });
 
     if (!settingsData.api) {
       settingsData.api = { enabled: false, port: 8080 };
@@ -215,15 +178,9 @@ function registerAppHandlers() {
   ipcMain.handle('setSize', async (event, data) => {
     const { settingsData } = userData;
 
-    if (data.id == 'playlist-resize-target') {
-      settingsData.windows.playlistWindow.size = data.size;
-    } else if (data.id == 'gen-resize-target') {
-      settingsData.windows.milkdropWindow.size = data.size;
-    } else if (data.id == 'now-playing-resize-target') {
-      if (!settingsData.windows.nowPlayingWindow) {
-        settingsData.windows.nowPlayingWindow = { x: 275, y: 128, size: [4, 6], visible: false };
-      }
-      settingsData.windows.nowPlayingWindow.size = data.size;
+    const windowId = windowIdForResizeTarget(data.id);
+    if (windowId) {
+      ensureWindowSettings(settingsData.windows, windowId).size = data.size;
     }
 
     userData.saveSettings((error) => {

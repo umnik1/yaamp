@@ -5,13 +5,9 @@ type SavedWindow = {
   visible?: boolean;
 };
 
-type SavedWindows = {
-  mainWindow?: SavedWindow;
-  playlistWindow?: SavedWindow;
-  equalizerWindow?: SavedWindow;
-  milkdropWindow?: SavedWindow;
-  nowPlayingWindow?: SavedWindow;
-};
+import WINDOW_DEFAULTS from './node/window-defaults.json';
+
+type SavedWindows = Record<string, SavedWindow | undefined>;
 
 type WindowLayoutEntry = {
   position: { x: number; y: number };
@@ -20,31 +16,36 @@ type WindowLayoutEntry = {
 
 type WindowLayout = Record<string, WindowLayoutEntry>;
 
-const WINDOW_MAP: [keyof SavedWindows, string][] = [
-  ['mainWindow', 'main'],
-  ['playlistWindow', 'playlist'],
-  ['equalizerWindow', 'equalizer'],
-  ['milkdropWindow', 'milkdrop'],
-  ['nowPlayingWindow', 'nowplaying'],
-];
-
-const VISIBILITY_DEFAULTS = [
-  ['main', 'mainWindow', true],
-  ['playlist', 'playlistWindow', true],
-  ['equalizer', 'equalizerWindow', true],
-  ['milkdrop', 'milkdropWindow', true],
-  ['nowplaying', 'nowPlayingWindow', false],
-] as const;
-
-const RESIZABLE_WINDOWS = new Set(['playlist', 'milkdrop', 'nowplaying']);
-
-export const DEFAULT_WINDOW_LAYOUT: WindowLayout = {
-  main: { position: { x: 0, y: 12 } },
-  playlist: { position: { x: 0, y: 244 }, size: [0, 0] },
-  equalizer: { position: { x: 0, y: 128 } },
-  milkdrop: { position: { x: 275, y: 12 }, size: [7, 8] },
-  nowplaying: { position: { x: 275, y: 128 }, size: [4, 6] },
+type WindowDefaults = {
+  settingsKey: string;
+  x: number;
+  y: number;
+  size?: [number, number];
+  visible: boolean;
 };
+
+const DEFAULTS = WINDOW_DEFAULTS as unknown as Record<string, WindowDefaults>;
+
+const WINDOW_MAP: [string, string][] = Object.entries(DEFAULTS).map(
+  ([windowId, win]) => [win.settingsKey, windowId]
+);
+
+const VISIBILITY_DEFAULTS: [string, string, boolean][] = Object.entries(DEFAULTS).map(
+  ([windowId, win]) => [windowId, win.settingsKey, win.visible]
+);
+
+const RESIZABLE_WINDOWS = new Set(
+  Object.keys(DEFAULTS).filter((windowId) => DEFAULTS[windowId].size != null)
+);
+
+export const DEFAULT_WINDOW_LAYOUT: WindowLayout = Object.fromEntries(
+  Object.entries(DEFAULTS).map(([windowId, win]) => [
+    windowId,
+    win.size
+      ? { position: { x: win.x, y: win.y }, size: win.size }
+      : { position: { x: win.x, y: win.y } },
+  ])
+);
 
 function withResizableSize(windowId: string, size?: [number, number]): WindowLayoutEntry {
   const entry = DEFAULT_WINDOW_LAYOUT[windowId];

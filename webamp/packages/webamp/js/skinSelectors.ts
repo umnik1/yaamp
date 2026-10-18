@@ -322,7 +322,7 @@ export const imageSelectors: Selectors = {
   ],
   GEN_BOTTOM_LEFT: [".gen-window .gen-bottom-left"],
   GEN_BOTTOM_RIGHT: [".gen-window .gen-bottom-right"],
-  GEN_BOTTOM_FILL: [".gen-window .gen-bottom"],
+  GEN_BOTTOM_FILL: [".gen-window .gen-bottom", ".gen-window .gen-bottom-fill"],
   GEN_MIDDLE_LEFT: [".gen-window .gen-middle-left"],
   GEN_MIDDLE_LEFT_BOTTOM: [".gen-window .gen-middle-left-bottom"],
   GEN_MIDDLE_RIGHT: [".gen-window .gen-middle-right"],

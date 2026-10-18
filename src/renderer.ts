@@ -90,8 +90,14 @@ ipcRenderer.on('lockWindow', () => {
 });
 
 webamp.renderWhenReady(document.getElementById('app')).then(() => {
-  window.webampRendered();
+  // Раскладку восстанавливаем первой: ошибка в интеграциях с ОС (превью,
+  // кнопки панели задач) не должна оставлять окна в раскладке по умолчанию.
   restoreSavedLayout();
+  try {
+    window.webampRendered();
+  } catch (error) {
+    console.error('Failed to set up window integrations', error);
+  }
 });
 
 window.webampPlay = function () {
@@ -161,27 +167,32 @@ ipcRenderer.invoke('getLikedTracks').then((rs: any) => {
   webamp.appendTracks(trackList);
 });
 
-ipcRenderer.on("setTracks", (event:any, data: any) => {
-  webamp.setTracksToPlay([]);
-
-  let tracksIds: string[] = [];
+// Добавляет треки Яндекс Музыки в конец плейлиста, пропуская те,
+// что уже в нём есть.
+function appendYandexTracks(data: any[]) {
+  const state = webamp.store.getState();
+  const existingIds = new Set(
+    state.playlist.trackOrder.map((id: number) => state.tracks[id]?.url)
+  );
 
   data.forEach((element: any) => {
-    let artist: any[] = [];
-
-    if (element) {
-      element.artists.forEach((a: any) => {
-        artist.push(a.name);
-      });
-
-      if (element.durationMs) {
-        if (!tracksIds.includes(element.id)) {
-          webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
-          tracksIds.push(element.id);
-        }
-      }
+    if (!element?.durationMs || existingIds.has(String(element.id))) {
+      return;
     }
+
+    const artist = element.artists.map((a: any) => a.name);
+    webamp.appendTracks([{ metaData: {artist: artist.join(', '), title: element.title}, url: element.id, duration: Math.floor(element.durationMs / 1000) }]);
+    existingIds.add(String(element.id));
   });
+}
+
+ipcRenderer.on("setTracks", (event:any, data: any) => {
+  webamp.setTracksToPlay([]);
+  appendYandexTracks(data);
+});
+
+ipcRenderer.on("appendTracks", (event:any, data: any) => {
+  appendYandexTracks(data);
 });
 
 ipcRenderer.on("setLoader", (event:any) => {
@@ -209,10 +220,8 @@ ipcRenderer.on("playPause", (event:any) => {
   const status = webamp.getMediaStatus();
   if (status === "PLAYING") {
     webamp.pause();
-    ipcRenderer.invoke('isPlay', 0);
   } else if (status === "PAUSED") {
     webamp.play();
-    ipcRenderer.invoke('isPlay', 1);
   } else if (status === "STOPPED") {
     const state = webamp.store.getState();
     const trackOrder = state.playlist.trackOrder;
@@ -220,22 +229,23 @@ ipcRenderer.on("playPause", (event:any) => {
 
     if (currentTrack !== null && currentTrack !== undefined) {
       webamp.play();
-      ipcRenderer.invoke('isPlay', 1);
     } else if (trackOrder && trackOrder.length > 0) {
       const firstTrackId = trackOrder[0];
       webamp.store.dispatch({ type: 'PLAY_TRACK', id: firstTrackId });
-      ipcRenderer.invoke('isPlay', 1);
     }
   }
 });
 
-setInterval(() => {
-  if (webamp.getMediaStatus() === "PLAYING") {
-    ipcRenderer.invoke('isPlay', 0);
-  } else {
-    ipcRenderer.invoke('isPlay', 1);
-  }
-}, 2000);
+// Обновляет кнопку воспроизведения на Touch Bar только при смене статуса.
+let lastMediaStatus: string | null = null;
+function syncPlayButton() {
+  const status = webamp.getMediaStatus();
+  if (status === lastMediaStatus) return;
+  lastMediaStatus = status;
+  ipcRenderer.invoke('isPlay', status === "PLAYING" ? 0 : 1);
+}
+webamp.store.subscribe(syncPlayButton);
+syncPlayButton();
 
 ipcRenderer.on("prevTrack", (event:any) => {
   webamp.previousTrack();

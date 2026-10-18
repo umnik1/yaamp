@@ -71,6 +71,9 @@ export function bindHotkeys(dispatch: Dispatch): () => void {
         case 73: // ALT+I
           dispatch(toggleWindowAndSave("nowplaying"));
           break;
+        case 72: // ALT+H
+          dispatch(toggleWindowAndSave("history"));
+          break;
       }
     } else {
       switch (e.keyCode) {

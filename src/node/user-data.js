@@ -1,15 +1,10 @@
 const fs = require('fs');
 const { readFile } = require('fs/promises');
 const { app } = require('electron');
+const { defaultWindowsSettings } = require('./window-defaults');
 
 const DEFAULT_SETTINGS = {
-  windows: {
-    mainWindow: { x: 0, y: 12, visible: true },
-    playlistWindow: { x: 0, y: 244, size: [0, 0], visible: true },
-    equalizerWindow: { x: 0, y: 128, visible: true },
-    milkdropWindow: { x: 275, y: 12, size: [7, 8], visible: true },
-    nowPlayingWindow: { x: 275, y: 128, size: [4, 6], visible: false },
-  },
+  windows: defaultWindowsSettings(),
   zoom: 1,
   api: { enabled: false, port: 8080 },
   wheelSeeds: ['user:onyourwave'],
@@ -21,8 +16,10 @@ const skinPath = `${userDataPath}/skin.json`;
 const eqPath = `${userDataPath}/eq.json`;
 const settingsPath = `${userDataPath}/settings.json`;
 
-let settingsData = { ...DEFAULT_SETTINGS, windows: { ...DEFAULT_SETTINGS.windows } };
-let resetSettings = { ...DEFAULT_SETTINGS, windows: { ...DEFAULT_SETTINGS.windows } };
+// Глубокие копии: изменения настроек не должны попадать в значения по умолчанию.
+const cloneDefaults = () => JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+let settingsData = cloneDefaults();
+let resetSettings = cloneDefaults();
 let yaAuthToken = '';
 let skinData = '';
 let eqData = '';

@@ -12,10 +12,12 @@ interface Props {
   setWindowSize(size: Size): void;
   widthOnly?: boolean;
   id?: string;
+  // Шаг изменения размера в пикселях. По умолчанию — сегмент Winamp (25x29).
+  step?: number;
 }
 
 function ResizeTarget(props: Props) {
-  const { currentSize, setWindowSize, widthOnly, ...passThroughProps } = props;
+  const { currentSize, setWindowSize, widthOnly, step, ...passThroughProps } = props;
   const [mouseDown, setMouseDown] = useState(false);
   const [mouseStart, setMouseStart] = useState<null | { x: number; y: number }>(
     null
@@ -31,14 +33,20 @@ function ResizeTarget(props: Props) {
       const x = ee.clientX - mouseStart.x;
       const y = ee.clientY - mouseStart.y;
 
+      // Размер хранится в сегментах; при мелком шаге он становится дробным.
+      const delta = (d: number, segment: number) =>
+        step == null
+          ? Math.round(d / segment)
+          : (Math.round(d / step) * step) / segment;
+
       const newWidth = Math.max(
         0,
-        width + Math.round(x / WINDOW_RESIZE_SEGMENT_WIDTH)
+        width + delta(x, WINDOW_RESIZE_SEGMENT_WIDTH)
       );
 
       const newHeight = widthOnly
         ? width
-        : Math.max(0, height + Math.round(y / WINDOW_RESIZE_SEGMENT_HEIGHT));
+        : Math.max(0, height + delta(y, WINDOW_RESIZE_SEGMENT_HEIGHT));
 
       const newSize: Size = [newWidth, newHeight];
       currentNewSize = newSize;

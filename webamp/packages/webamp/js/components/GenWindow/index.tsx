@@ -104,6 +104,7 @@ export const GenWindow = ({ children, title, windowId, onKeyDown, domId = "gen-w
               setWindowSize={(size) => setWindowSize(windowId, size)}
               id={resizeId}
               className="gen-resize-target"
+              step={1}
             />
           </div>
         </div>

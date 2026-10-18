@@ -1,20 +1,3 @@
-#webamp #now-playing-window .gen-top-title-plain {
-  font-family: "Arial", sans-serif;
-  font-size: 8px;
-  font-weight: bold;
-  color: #0f0;
-  line-height: 9px;
-  margin-top: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 160px;
-}
-
-#webamp #now-playing-window.selected .gen-top-title-plain {
-  color: #fff;
-}
-
 #webamp #now-playing-window .gen-middle-center {
   background-color: #000;
 }
@@ -31,6 +14,10 @@
   font-family: "Arial", sans-serif;
   font-size: 11px;
   line-height: 1.35;
+}
+
+#webamp .now-playing-content > * {
+  flex-shrink: 0;
 }
 
 #webamp .now-playing-empty {

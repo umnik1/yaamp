@@ -358,8 +358,7 @@ export default function NowPlayingWindow() {
 
   return (
     <GenWindow
-      title="О треке"
-      plainTitle
+      title="Track Info"
       windowId={WINDOWS.NOW_PLAYING}
       domId="now-playing-window"
       resizeId="now-playing-resize-target"
