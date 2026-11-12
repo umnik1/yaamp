@@ -36,6 +36,19 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
   const [data, setData] = useState<any>([]);
   const [userSettings, setUserSettings] = useState<any>([]);
   const [apiPort, setApiPort] = useState<string>('8080');
+  const [lastfmApiKey, setLastfmApiKey] = useState<string>('');
+  const [lastfmApiSecret, setLastfmApiSecret] = useState<string>('');
+
+  const refreshSettings = () => {
+    ipcRenderer.invoke('getSettings').then((rs: any) => {
+      const settings = JSON.parse(rs);
+      setUserSettings(settings);
+      if (settings.api?.port) {
+        setApiPort(settings.api.port.toString());
+      }
+      setLastfmApiKey(settings.lastfm?.apiKey || '');
+    });
+  };
 
   const handleChange = (event: { target: { value: SetStateAction<string>; }; }) => {
     ipcRenderer.invoke("search", {searchText: event.target.value}).then((rs: any) => {
@@ -51,17 +64,53 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
   const handleApiPortSave = async () => {
     const port = parseInt(apiPort) || 8080;
     await ipcRenderer.invoke("setApiSettings", { port: port });
-    ipcRenderer.invoke('getSettings').then((rs: any) => {
-      setUserSettings(JSON.parse(rs));
-    });
+    refreshSettings();
   };
 
   const handleApiToggle = async () => {
     const newEnabled = !(userSettings.api?.enabled || false);
     await ipcRenderer.invoke("setApiSettings", { enabled: newEnabled });
-    ipcRenderer.invoke('getSettings').then((rs: any) => {
-      setUserSettings(JSON.parse(rs));
-    });
+    refreshSettings();
+  };
+
+  const handleLastfmToggle = async () => {
+    const newEnabled = !(userSettings.lastfm?.enabled || false);
+    await ipcRenderer.invoke("setLastfmSettings", { enabled: newEnabled });
+    refreshSettings();
+  };
+
+  const handleLastfmApiKeyChange = (event: { target: { value: SetStateAction<string>; }; }) => {
+    setLastfmApiKey(event.target.value.toString());
+  };
+
+  const handleLastfmApiSecretChange = (event: { target: { value: SetStateAction<string>; }; }) => {
+    setLastfmApiSecret(event.target.value.toString());
+  };
+
+  const handleLastfmSaveCredentials = async () => {
+    const patch: { apiKey: string; apiSecret?: string } = { apiKey: lastfmApiKey };
+    if (lastfmApiSecret) {
+      patch.apiSecret = lastfmApiSecret;
+    }
+    await ipcRenderer.invoke("setLastfmSettings", patch);
+    setLastfmApiSecret('');
+    refreshSettings();
+  };
+
+  const handleLastfmBeginAuth = async () => {
+    await handleLastfmSaveCredentials();
+    await ipcRenderer.invoke("lastfmBeginAuth");
+    refreshSettings();
+  };
+
+  const handleLastfmCompleteAuth = async () => {
+    await ipcRenderer.invoke("lastfmCompleteAuth");
+    refreshSettings();
+  };
+
+  const handleLastfmLogout = async () => {
+    await ipcRenderer.invoke("lastfmLogout");
+    refreshSettings();
   };
 
   useEffect(() => {
@@ -88,13 +137,7 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
       ipcRenderer.invoke('getWheelWaves').then((rs: any) => {
         setWaves(rs);
       })
-      ipcRenderer.invoke('getSettings').then((rs: any) => {
-        const settings = JSON.parse(rs);
-        setUserSettings(settings);
-        if (settings.api?.port) {
-          setApiPort(settings.api.port.toString());
-        }
-      })
+      refreshSettings();
     }
 
     menuOpened();
@@ -291,6 +334,46 @@ const MainContextMenu = memo(({ filePickers }: Props) => {
           onClick={handleApiPortSave}
           label="Сохранить порт"
         />
+      </Parent>
+      <Parent label="Last.fm">
+        <Node
+          onClick={handleLastfmToggle}
+          label={userSettings.lastfm?.enabled ? "Выключить скробблинг" : "Включить скробблинг"}
+          checked={userSettings.lastfm?.enabled || false}
+        />
+        <Hr />
+        <li className="input" id="notClose">
+          <input
+            className="searchField"
+            type="text"
+            id="notClose"
+            placeholder="API key"
+            value={lastfmApiKey}
+            onChange={handleLastfmApiKeyChange}
+            onBlur={handleLastfmSaveCredentials}
+          />
+        </li>
+        <li className="input" id="notClose">
+          <input
+            className="searchField"
+            type="password"
+            id="notClose"
+            placeholder={userSettings.lastfm?.hasSecret ? "Secret сохранён" : "API secret"}
+            value={lastfmApiSecret}
+            onChange={handleLastfmApiSecretChange}
+            onBlur={handleLastfmSaveCredentials}
+          />
+        </li>
+        <Hr />
+        <Node onClick={handleLastfmSaveCredentials} label="Сохранить ключи" />
+        <Node onClick={handleLastfmBeginAuth} label="Авторизовать" />
+        <Node onClick={handleLastfmCompleteAuth} label="Подтвердить вход" />
+        {userSettings.lastfm?.username ? (
+          <Node label={`Вошли: ${userSettings.lastfm.username}`} />
+        ) : null}
+        {userSettings.lastfm?.hasSession ? (
+          <Node onClick={handleLastfmLogout} label="Выйти из Last.fm" />
+        ) : null}
       </Parent>
       <Hr />
       <Node onClick={async () => {

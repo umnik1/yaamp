@@ -3,10 +3,19 @@ const { readFile } = require('fs/promises');
 const { app } = require('electron');
 const { defaultWindowsSettings } = require('./window-defaults');
 
+const DEFAULT_LASTFM = {
+  enabled: false,
+  apiKey: '',
+  apiSecret: '',
+  sessionKey: '',
+  username: '',
+};
+
 const DEFAULT_SETTINGS = {
   windows: defaultWindowsSettings(),
   zoom: 1,
   api: { enabled: false, port: 8080 },
+  lastfm: { ...DEFAULT_LASTFM },
   wheelSeeds: ['user:onyourwave'],
 };
 
@@ -63,6 +72,7 @@ const getSettingsFromFile = async () => {
         enabled: parsed.api?.enabled !== undefined ? parsed.api.enabled : false,
         port: parsed.api?.port || 8080,
       },
+      lastfm: require('./lastfm-core').normalizeLastfmSettings(parsed.lastfm),
     };
   } catch {
     fs.writeFile(settingsPath, JSON.stringify(settingsData), () => {});
