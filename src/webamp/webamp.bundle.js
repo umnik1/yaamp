@@ -39079,7 +39079,7 @@ const {
 const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
   filePickers
 }) => {
-  var _userSettings$api2, _userSettings$api3;
+  var _userSettings$api2, _userSettings$api3, _userSettings$lastfm2, _userSettings$lastfm3, _userSettings$lastfm4, _userSettings$lastfm5, _userSettings$lastfm6;
   const networkConnected = useTypedSelector(getNetworkConnected);
   const genWindows = useTypedSelector(getGenWindows);
   const close = useActionCreator(actionCreators_close);
@@ -39100,6 +39100,19 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
   const [data, setData] = (0,react.useState)([]);
   const [userSettings, setUserSettings] = (0,react.useState)([]);
   const [apiPort, setApiPort] = (0,react.useState)('8080');
+  const [lastfmApiKey, setLastfmApiKey] = (0,react.useState)('');
+  const [lastfmApiSecret, setLastfmApiSecret] = (0,react.useState)('');
+  const refreshSettings = () => {
+    MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
+      var _settings$api, _settings$lastfm;
+      const settings = JSON.parse(rs);
+      setUserSettings(settings);
+      if ((_settings$api = settings.api) !== null && _settings$api !== void 0 && _settings$api.port) {
+        setApiPort(settings.api.port.toString());
+      }
+      setLastfmApiKey(((_settings$lastfm = settings.lastfm) === null || _settings$lastfm === void 0 ? void 0 : _settings$lastfm.apiKey) || '');
+    });
+  };
   const handleChange = event => {
     MainContextMenu_ipcRenderer.invoke("search", {
       searchText: event.target.value
@@ -39116,9 +39129,7 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
     await MainContextMenu_ipcRenderer.invoke("setApiSettings", {
       port: port
     });
-    MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
-      setUserSettings(JSON.parse(rs));
-    });
+    refreshSettings();
   };
   const handleApiToggle = async () => {
     var _userSettings$api;
@@ -39126,9 +39137,45 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
     await MainContextMenu_ipcRenderer.invoke("setApiSettings", {
       enabled: newEnabled
     });
-    MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
-      setUserSettings(JSON.parse(rs));
+    refreshSettings();
+  };
+  const handleLastfmToggle = async () => {
+    var _userSettings$lastfm;
+    const newEnabled = !((_userSettings$lastfm = userSettings.lastfm) !== null && _userSettings$lastfm !== void 0 && _userSettings$lastfm.enabled || false);
+    await MainContextMenu_ipcRenderer.invoke("setLastfmSettings", {
+      enabled: newEnabled
     });
+    refreshSettings();
+  };
+  const handleLastfmApiKeyChange = event => {
+    setLastfmApiKey(event.target.value.toString());
+  };
+  const handleLastfmApiSecretChange = event => {
+    setLastfmApiSecret(event.target.value.toString());
+  };
+  const handleLastfmSaveCredentials = async () => {
+    const patch = {
+      apiKey: lastfmApiKey
+    };
+    if (lastfmApiSecret) {
+      patch.apiSecret = lastfmApiSecret;
+    }
+    await MainContextMenu_ipcRenderer.invoke("setLastfmSettings", patch);
+    setLastfmApiSecret('');
+    refreshSettings();
+  };
+  const handleLastfmBeginAuth = async () => {
+    await handleLastfmSaveCredentials();
+    await MainContextMenu_ipcRenderer.invoke("lastfmBeginAuth");
+    refreshSettings();
+  };
+  const handleLastfmCompleteAuth = async () => {
+    await MainContextMenu_ipcRenderer.invoke("lastfmCompleteAuth");
+    refreshSettings();
+  };
+  const handleLastfmLogout = async () => {
+    await MainContextMenu_ipcRenderer.invoke("lastfmLogout");
+    refreshSettings();
   };
   (0,react.useEffect)(() => {
     if (!playlistgetted) {
@@ -39154,14 +39201,7 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
       MainContextMenu_ipcRenderer.invoke('getWheelWaves').then(rs => {
         setWaves(rs);
       });
-      MainContextMenu_ipcRenderer.invoke('getSettings').then(rs => {
-        var _settings$api;
-        const settings = JSON.parse(rs);
-        setUserSettings(settings);
-        if ((_settings$api = settings.api) !== null && _settings$api !== void 0 && _settings$api.port) {
-          setApiPort(settings.api.port.toString());
-        }
-      });
+      refreshSettings();
     }
     menuOpened();
   }, [menuOpened]);
@@ -39401,6 +39441,51 @@ const MainContextMenu = /*#__PURE__*/(0,react.memo)(({
         onClick: handleApiPortSave,
         label: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u043F\u043E\u0440\u0442"
       })]
+    }), /*#__PURE__*/(0,jsx_runtime.jsxs)(Parent, {
+      label: "Last.fm",
+      children: [/*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleLastfmToggle,
+        label: (_userSettings$lastfm2 = userSettings.lastfm) !== null && _userSettings$lastfm2 !== void 0 && _userSettings$lastfm2.enabled ? "Выключить скробблинг" : "Включить скробблинг",
+        checked: ((_userSettings$lastfm3 = userSettings.lastfm) === null || _userSettings$lastfm3 === void 0 ? void 0 : _userSettings$lastfm3.enabled) || false
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsx)("li", {
+        className: "input",
+        id: "notClose",
+        children: /*#__PURE__*/(0,jsx_runtime.jsx)("input", {
+          className: "searchField",
+          type: "text",
+          id: "notClose",
+          placeholder: "API key",
+          value: lastfmApiKey,
+          onChange: handleLastfmApiKeyChange,
+          onBlur: handleLastfmSaveCredentials
+        })
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)("li", {
+        className: "input",
+        id: "notClose",
+        children: /*#__PURE__*/(0,jsx_runtime.jsx)("input", {
+          className: "searchField",
+          type: "password",
+          id: "notClose",
+          placeholder: (_userSettings$lastfm4 = userSettings.lastfm) !== null && _userSettings$lastfm4 !== void 0 && _userSettings$lastfm4.hasSecret ? "Secret сохранён" : "API secret",
+          value: lastfmApiSecret,
+          onChange: handleLastfmApiSecretChange,
+          onBlur: handleLastfmSaveCredentials
+        })
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleLastfmSaveCredentials,
+        label: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u043A\u043B\u044E\u0447\u0438"
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleLastfmBeginAuth,
+        label: "\u0410\u0432\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u0442\u044C"
+      }), /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleLastfmCompleteAuth,
+        label: "\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C \u0432\u0445\u043E\u0434"
+      }), (_userSettings$lastfm5 = userSettings.lastfm) !== null && _userSettings$lastfm5 !== void 0 && _userSettings$lastfm5.username ? /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        label: `Вошли: ${userSettings.lastfm.username}`
+      }) : null, (_userSettings$lastfm6 = userSettings.lastfm) !== null && _userSettings$lastfm6 !== void 0 && _userSettings$lastfm6.hasSession ? /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
+        onClick: handleLastfmLogout,
+        label: "\u0412\u044B\u0439\u0442\u0438 \u0438\u0437 Last.fm"
+      }) : null]
     }), /*#__PURE__*/(0,jsx_runtime.jsx)(ContextMenu_Hr, {}), /*#__PURE__*/(0,jsx_runtime.jsx)(Node, {
       onClick: async () => {
         MainContextMenu_ipcRenderer.invoke("openLink", {

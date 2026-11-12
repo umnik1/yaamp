@@ -247,6 +247,46 @@ function syncPlayButton() {
 webamp.store.subscribe(syncPlayButton);
 syncPlayButton();
 
+// Прогресс для Last.fm: раз в секунду и при смене трека/статуса.
+let lastProgressSignature: string | null = null;
+function reportPlaybackProgress(force = false) {
+  const state = webamp.store.getState();
+  const status = state.media.status || 'STOPPED';
+  const elapsedSec = Number(state.media.timeElapsed) || 0;
+  const currentId = state.playlist.currentTrack;
+  const track = currentId != null ? state.tracks[currentId] : null;
+
+  if (!track) {
+    return;
+  }
+
+  const artist = track.artist || '';
+  const title = track.title || '';
+  const album = track.album || '';
+  const durationSec = Number(track.duration) || 0;
+  const trackId = track.url != null ? String(track.url) : '';
+  const signature = `${trackId}|${artist}|${title}|${status}|${Math.floor(elapsedSec)}`;
+
+  if (!force && signature === lastProgressSignature) {
+    return;
+  }
+  lastProgressSignature = signature;
+
+  ipcRenderer.invoke('playbackProgress', {
+    trackId,
+    artist,
+    title,
+    album,
+    durationSec,
+    elapsedSec,
+    status,
+  });
+}
+
+webamp.store.subscribe(() => reportPlaybackProgress(false));
+setInterval(() => reportPlaybackProgress(true), 1000);
+reportPlaybackProgress(true);
+
 ipcRenderer.on("prevTrack", (event:any) => {
   webamp.previousTrack();
 });

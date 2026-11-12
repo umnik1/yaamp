@@ -11,6 +11,7 @@ const {
 } = require('../window-defaults');
 const { createApiServer, stopApiServer } = require('../api-server');
 const { play, trackinfo } = require('../touch-bar');
+const lastfm = require('../lastfm');
 
 function sendToRenderer(channel, ...args) {
   mainWindow.get()?.webContents.send(channel, ...args);
@@ -137,7 +138,64 @@ function registerAppHandlers() {
       settingsData.api = { enabled: false, port: 8080 };
     }
 
-    return JSON.stringify(settingsData);
+    lastfm.ensureLastfmSettings();
+
+    // Secret и session key не отдаём в renderer.
+    const { apiSecret, sessionKey, ...safeLastfm } = settingsData.lastfm;
+    return JSON.stringify({
+      ...settingsData,
+      lastfm: {
+        ...safeLastfm,
+        ...lastfm.publicLastfmSettings(),
+      },
+    });
+  });
+
+  ipcMain.handle('setLastfmSettings', async (event, data = {}) => {
+    const result = lastfm.saveLastfmPatch(data);
+    return result;
+  });
+
+  ipcMain.handle('lastfmBeginAuth', async () => {
+    try {
+      const { authUrl } = await lastfm.beginAuth();
+      await shell.openExternal(authUrl);
+      sendToRenderer('showMessage', 'Подтвердите доступ в браузере, затем нажмите «Подтвердить вход»');
+      return { success: true };
+    } catch (error) {
+      console.error('[lastfmBeginAuth]', error);
+      sendToRenderer('showMessage', error.message || 'Не удалось начать авторизацию Last.fm');
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('lastfmCompleteAuth', async () => {
+    try {
+      const result = await lastfm.completeAuth();
+      sendToRenderer('showMessage', result.username
+        ? `Last.fm: вход выполнен (${result.username})`
+        : 'Last.fm: вход выполнен');
+      return { success: true, lastfm: result };
+    } catch (error) {
+      console.error('[lastfmCompleteAuth]', error);
+      sendToRenderer('showMessage', error.message || 'Не удалось подтвердить вход Last.fm');
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('lastfmLogout', async () => {
+    const result = lastfm.logout();
+    sendToRenderer('showMessage', 'Выход из Last.fm');
+    return result;
+  });
+
+  ipcMain.handle('playbackProgress', async (event, data) => {
+    try {
+      await lastfm.handlePlaybackProgress(data || {});
+    } catch (error) {
+      console.error('[playbackProgress]', error);
+    }
+    return true;
   });
 
   ipcMain.handle('setApiSettings', async (event, data) => {
