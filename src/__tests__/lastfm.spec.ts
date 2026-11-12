@@ -4,6 +4,9 @@ const {
   scrobbleThresholdSec,
   shouldScrobble,
   normalizeLastfmSettings,
+  emptyListenSession,
+  applyPlayback,
+  NOW_PLAYING_RETRY_MS,
 } = require('../node/lastfm-core');
 
 describe('lastfm signing', () => {
@@ -51,6 +54,81 @@ describe('lastfm scrobble threshold', () => {
     expect(
       shouldScrobble({ durationSec: 100, listenedSec: 50, alreadyScrobbled: true }),
     ).toBe(false);
+  });
+});
+
+describe('lastfm listen session', () => {
+  const track = (over = {}) => ({
+    trackKey: '1',
+    artist: 'Artist',
+    title: 'Title',
+    album: 'Album',
+    durationSec: 100,
+    elapsedSec: 0,
+    status: 'PLAYING',
+    ...over,
+  });
+
+  it('does not start the scrobble clock until playback', () => {
+    const selected = applyPlayback(
+      emptyListenSession(),
+      track({ status: 'STOPPED', elapsedSec: 0 }),
+      1_000,
+    );
+    expect(selected.session.startedAt).toBeNull();
+    expect(selected.sendNowPlaying).toBe(false);
+
+    const playing = applyPlayback(selected.session, track({ elapsedSec: 0 }), 5_000);
+    expect(playing.session.startedAt).toBe(5_000);
+    expect(playing.sendNowPlaying).toBe(true);
+  });
+
+  it('starts a new session when the same track restarts', () => {
+    let session = applyPlayback(emptyListenSession(), track({ elapsedSec: 0 }), 1_000).session;
+    session = applyPlayback(session, track({ elapsedSec: 40 }), 40_000).session;
+    session.scrobbled = true;
+    session.nowPlayingSent = true;
+
+    const replay = applyPlayback(session, track({ elapsedSec: 0 }), 50_000);
+    expect(replay.session).not.toBe(session);
+    expect(replay.events).toContain('start');
+    expect(replay.session.listenedSec).toBe(0);
+    expect(replay.session.scrobbled).toBe(false);
+    expect(replay.session.nowPlayingSent).toBe(false);
+    expect(replay.session.startedAt).toBe(50_000);
+    expect(replay.sendNowPlaying).toBe(true);
+    session.scrobbled = false;
+    expect(replay.session.scrobbled).toBe(false);
+  });
+
+  it('retries now playing only after the backoff', () => {
+    const first = applyPlayback(emptyListenSession(), track({ elapsedSec: 0 }), 1_000);
+    expect(first.sendNowPlaying).toBe(true);
+
+    const soon = applyPlayback(first.session, track({ elapsedSec: 1 }), 2_000);
+    expect(soon.sendNowPlaying).toBe(false);
+    expect(soon.session).toBe(first.session);
+
+    const later = applyPlayback(
+      soon.session,
+      track({ elapsedSec: 2 }),
+      1_000 + NOW_PLAYING_RETRY_MS,
+    );
+    expect(later.sendNowPlaying).toBe(true);
+  });
+
+  it('keeps the same session across pause and resume', () => {
+    const started = applyPlayback(emptyListenSession(), track({ elapsedSec: 1 }), 1_000);
+    started.session.nowPlayingSent = true;
+    const paused = applyPlayback(started.session, track({ status: 'PAUSED', elapsedSec: 10 }), 10_000);
+    expect(paused.session).toBe(started.session);
+    expect(paused.events).toContain('paused');
+    expect(paused.session.startedAt).toBe(1_000);
+
+    const resumed = applyPlayback(paused.session, track({ elapsedSec: 10 }), 20_000);
+    expect(resumed.session).toBe(started.session);
+    expect(resumed.events).toContain('resume');
+    expect(resumed.sendNowPlaying).toBe(false);
   });
 });
 

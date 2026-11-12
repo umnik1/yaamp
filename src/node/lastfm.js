@@ -8,6 +8,8 @@ const {
   canScrobbleTrack,
   scrobbleThresholdSec,
   shouldScrobble,
+  emptyListenSession,
+  applyPlayback,
 } = require('./lastfm-core');
 
 const API_ROOT = 'https://ws.audioscrobbler.com/2.0/';
@@ -18,19 +20,7 @@ const BUILTIN_API_SECRET = '';
 
 let pendingAuthToken = null;
 
-let listenSession = {
-  trackKey: null,
-  artist: null,
-  title: null,
-  album: null,
-  durationSec: 0,
-  startedAt: null,
-  lastElapsed: null,
-  listenedSec: 0,
-  nowPlayingSent: false,
-  scrobbled: false,
-  lastStatus: null,
-};
+let listenSession = emptyListenSession();
 
 function debugLog(event, details = '') {
   const suffix = details ? ` ${details}` : '';
@@ -221,19 +211,7 @@ function logout() {
 }
 
 function resetListenSession() {
-  listenSession = {
-    trackKey: null,
-    artist: null,
-    title: null,
-    album: null,
-    durationSec: 0,
-    startedAt: null,
-    lastElapsed: null,
-    listenedSec: 0,
-    nowPlayingSent: false,
-    scrobbled: false,
-    lastStatus: null,
-  };
+  listenSession = emptyListenSession();
 }
 
 function resolveAlbum(trackId, albumFromRenderer) {
@@ -244,51 +222,31 @@ function resolveAlbum(trackId, albumFromRenderer) {
   return meta.albums?.[0]?.title || '';
 }
 
-function accumulateListenTime(elapsedSec, status) {
-  if (status !== 'PLAYING') {
-    listenSession.lastElapsed = elapsedSec;
-    return;
-  }
-
-  if (listenSession.lastElapsed == null) {
-    listenSession.lastElapsed = elapsedSec;
-    return;
-  }
-
-  const delta = elapsedSec - listenSession.lastElapsed;
-  listenSession.lastElapsed = elapsedSec;
-
-  // Нормальный тик ~1с; скачок вперёд/назад — перемотка, не копим.
-  if (delta > 0 && delta <= 2.5) {
-    listenSession.listenedSec += delta;
-  }
-}
-
-async function sendNowPlaying() {
+async function sendNowPlaying(session) {
   const params = {
-    artist: listenSession.artist,
-    track: listenSession.title,
-    duration: Math.floor(listenSession.durationSec),
+    artist: session.artist,
+    track: session.title,
+    duration: Math.floor(session.durationSec),
   };
-  if (listenSession.album) params.album = listenSession.album;
+  if (session.album) params.album = session.album;
 
   await callMethod('track.updateNowPlaying', params, { signed: true, session: true });
-  debugLog('nowPlaying ok', trackLabel());
+  debugLog('nowPlaying ok', trackLabel(session));
 }
 
-async function sendScrobble() {
+async function sendScrobble(session) {
   const params = {
-    artist: listenSession.artist,
-    track: listenSession.title,
-    timestamp: Math.floor(listenSession.startedAt / 1000),
-    duration: Math.floor(listenSession.durationSec),
+    artist: session.artist,
+    track: session.title,
+    timestamp: Math.floor(session.startedAt / 1000),
+    duration: Math.floor(session.durationSec),
   };
-  if (listenSession.album) params.album = listenSession.album;
+  if (session.album) params.album = session.album;
 
   await callMethod('track.scrobble', params, { signed: true, session: true });
   debugLog(
     'scrobble ok',
-    `${trackLabel()} (listened ${Math.floor(listenSession.listenedSec)}s / ${Math.floor(listenSession.durationSec)}s)`,
+    `${trackLabel(session)} (listened ${Math.floor(session.listenedSec)}s / ${Math.floor(session.durationSec)}s)`,
   );
 }
 
@@ -300,72 +258,57 @@ async function handlePlaybackProgress(payload = {}) {
 
   const artist = (payload.artist || '').trim();
   const title = (payload.title || '').trim();
+  if (!artist || !title) return;
+
   const durationSec = Number(payload.durationSec) || 0;
   const elapsedSec = Number(payload.elapsedSec) || 0;
   const status = payload.status || 'STOPPED';
   const trackId = payload.trackId != null ? String(payload.trackId) : '';
   const trackKey = trackId || `${artist}\0${title}`;
+  const previous = listenSession;
+  const result = applyPlayback(previous, {
+    trackKey,
+    artist,
+    title,
+    album: resolveAlbum(trackId, payload.album),
+    durationSec,
+    elapsedSec,
+    status,
+  }, Date.now());
 
-  if (!artist || !title) {
-    return;
+  listenSession = result.session;
+
+  if (result.events.includes('end')) {
+    debugLog(
+      'track end',
+      `${trackLabel(previous)} scrobbled=${previous.scrobbled} listened=${Math.floor(previous.listenedSec)}s`,
+    );
+  }
+  if (result.events.includes('start')) {
+    debugLog('track start', `${trackLabel()} (${Math.floor(listenSession.durationSec)}s)`);
+  }
+  if (result.events.includes('paused') || result.events.includes('stopped')) {
+    const eventName = result.events.includes('paused') ? 'paused' : 'stopped';
+    debugLog(
+      eventName,
+      `${trackLabel()} listened=${Math.floor(listenSession.listenedSec)}s (now playing на Last.fm не сбрасываем)`,
+    );
+  }
+  if (result.events.includes('resume')) {
+    debugLog('resume', trackLabel());
   }
 
-  if (listenSession.trackKey !== trackKey) {
-    if (listenSession.trackKey) {
-      debugLog(
-        'track end',
-        `${trackLabel()} scrobbled=${listenSession.scrobbled} listened=${Math.floor(listenSession.listenedSec)}s`,
-      );
-    }
-    listenSession = {
-      trackKey,
-      artist,
-      title,
-      album: resolveAlbum(trackId, payload.album),
-      durationSec,
-      startedAt: Date.now(),
-      lastElapsed: elapsedSec,
-      listenedSec: 0,
-      nowPlayingSent: false,
-      scrobbled: false,
-      lastStatus: status,
-    };
-    debugLog('track start', `${trackLabel()} (${Math.floor(durationSec)}s)`);
-  } else {
-    if (durationSec > 0) listenSession.durationSec = durationSec;
-    if (!listenSession.album) {
-      listenSession.album = resolveAlbum(trackId, payload.album);
-    }
-    accumulateListenTime(elapsedSec, status);
-
-    if (listenSession.lastStatus !== status) {
-      if (status === 'PAUSED' || status === 'STOPPED') {
-        debugLog(
-          status.toLowerCase(),
-          `${trackLabel()} listened=${Math.floor(listenSession.listenedSec)}s (now playing на Last.fm не сбрасываем)`,
-        );
-      } else if (status === 'PLAYING') {
-        debugLog('resume', trackLabel());
-      }
-      listenSession.lastStatus = status;
-    }
+  if (result.sendNowPlaying) {
+    const target = listenSession;
+    sendNowPlaying(target).then(() => {
+      if (listenSession === target) target.nowPlayingSent = true;
+    }).catch((error) => console.error('[lastfm] nowPlaying fail', error));
   }
 
-  if (status === 'PLAYING' && !listenSession.nowPlayingSent) {
-    listenSession.nowPlayingSent = true;
-    sendNowPlaying().catch((error) => console.error('[lastfm] nowPlaying fail', error));
-  }
-
-  if (
-    shouldScrobble({
-      durationSec: listenSession.durationSec,
-      listenedSec: listenSession.listenedSec,
-      alreadyScrobbled: listenSession.scrobbled,
-    })
-  ) {
-    listenSession.scrobbled = true;
-    sendScrobble().catch((error) => {
-      listenSession.scrobbled = false;
+  if (result.sendScrobble) {
+    const target = listenSession;
+    sendScrobble(target).catch((error) => {
+      if (listenSession === target) target.scrobbled = false;
       console.error('[lastfm] scrobble fail', error);
     });
   }
